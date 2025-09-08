@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: ecolithswap-backend
+    env: node
+    repo: https://github.com/your-username/ecolithswap-backend
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DB_CLIENT
+        value: sqlite3
+      - key: DB_FILENAME
+        value: ./ecolithswap.db
+      - key: JWT_SECRET
+        value: ecolithswap-production-secret-key-2025
+      - key: FRONTEND_URL
+        value: https://sqqiicp3tk3d.space.minimax.io

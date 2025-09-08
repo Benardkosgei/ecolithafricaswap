@@ -1,0 +1,49 @@
+{
+  "stats": {
+    "totalCustomers": 12547,
+    "activeBatteries": 8924,
+    "swapStations": 156,
+    "monthlyRevenue": 245890,
+    "dailySwaps": 1247,
+    "co2Saved": 28640,
+    "plasticRecycled": 11250,
+    "energySaved": 145890
+  },
+  "recentActivity": [
+    {
+      "id": "1",
+      "type": "swap",
+      "title": "Battery Swap Completed",
+      "description": "Customer #12547 completed swap at Station Downtown Mall",
+      "timestamp": "2025-02-01T18:30:00Z",
+      "status": "success"
+    },
+    {
+      "id": "2",
+      "type": "customer",
+      "title": "New Customer Registration",
+      "description": "John Doe registered with premium subscription",
+      "timestamp": "2025-02-01T18:15:00Z",
+      "status": "success"
+    },
+    {
+      "id": "3",
+      "type": "alert",
+      "title": "Low Battery Alert",
+      "description": "Station Central Park has only 2 batteries remaining",
+      "timestamp": "2025-02-01T18:00:00Z",
+      "status": "warning"
+    }
+  ],
+  "environmentalImpact": {
+    "co2SavedMonthly": [
+      { "month": "Jan", "co2Saved": 2340, "plasticRecycled": 890, "swaps": 12450 },
+      { "month": "Feb", "co2Saved": 2680, "plasticRecycled": 1020, "swaps": 14230 },
+      { "month": "Mar", "co2Saved": 2450, "plasticRecycled": 950, "swaps": 13120 },
+      { "month": "Apr", "co2Saved": 3120, "plasticRecycled": 1180, "swaps": 16890 },
+      { "month": "May", "co2Saved": 2890, "plasticRecycled": 1090, "swaps": 15670 },
+      { "month": "Jun", "co2Saved": 3450, "plasticRecycled": 1340, "swaps": 18920 },
+      { "month": "Jul", "co2Saved": 3680, "plasticRecycled": 1420, "swaps": 20150 }
+    ]
+  }
+}

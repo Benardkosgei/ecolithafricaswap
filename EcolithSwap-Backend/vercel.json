@@ -1,0 +1,22 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "server.js",
+      "use": "@vercel/node"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "/server.js"
+    }
+  ],
+  "env": {
+    "NODE_ENV": "production",
+    "DB_CLIENT": "sqlite3",
+    "DB_FILENAME": "./ecolithswap.db",
+    "JWT_SECRET": "ecolithswap-production-secret-key-2025",
+    "FRONTEND_URL": "https://sqqiicp3tk3d.space.minimax.io"
+  }
+}
