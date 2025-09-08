@@ -1,17 +1,12 @@
-import React from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/card'
-import { Badge } from '../ui/badge'
-import { formatDate } from '../../lib/utils'
-import { Activity, Battery, Users, MapPin, AlertTriangle } from 'lucide-react'
 
-interface ActivityItem {
-  id: string
-  type: 'swap' | 'customer' | 'station' | 'maintenance' | 'alert'
-  title: string
-  description: string
-  timestamp: string
-  status?: 'success' | 'warning' | 'error'
-}
+import React from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
+import { Badge } from '../ui/badge';
+import { formatDate } from '../../lib/utils';
+import { adminAPI } from '../../lib/api';
+import { ActivityItem } from '../../types';
+import { Activity, Battery, Users, MapPin, AlertTriangle } from 'lucide-react';
 
 const activityIcons = {
   swap: Battery,
@@ -19,63 +14,34 @@ const activityIcons = {
   station: MapPin,
   maintenance: Activity,
   alert: AlertTriangle,
-}
+};
 
 export function RecentActivity() {
-  const activities: ActivityItem[] = [
+  const { data: activities, isLoading, isError } = useQuery<ActivityItem[]>(
     {
-      id: '1',
-      type: 'swap',
-      title: 'Battery Swap Completed',
-      description: 'Customer #12547 completed swap at Station Downtown Mall',
-      timestamp: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
-      status: 'success',
-    },
-    {
-      id: '2',
-      type: 'customer',
-      title: 'New Customer Registration',
-      description: 'John Doe registered with premium subscription',
-      timestamp: new Date(Date.now() - 15 * 60 * 1000).toISOString(),
-      status: 'success',
-    },
-    {
-      id: '3',
-      type: 'alert',
-      title: 'Low Battery Alert',
-      description: 'Station Central Park has only 2 batteries remaining',
-      timestamp: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
-      status: 'warning',
-    },
-    {
-      id: '4',
-      type: 'maintenance',
-      title: 'Maintenance Scheduled',
-      description: 'Battery #BAT-7829 scheduled for service tomorrow',
-      timestamp: new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString(),
-    },
-    {
-      id: '5',
-      type: 'station',
-      title: 'Station Status Update',
-      description: 'Station Tech Hub came back online after maintenance',
-      timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-      status: 'success',
-    },
-  ]
+      queryKey: ['recentActivities'],
+      queryFn: async () => {
+        const response = await adminAPI.getRecentActivities(5);
+        return response.data;
+      }
+    }
+  );
 
   const getStatusBadge = (status?: string) => {
     switch (status) {
       case 'success':
-        return <Badge variant="success">Success</Badge>
+        return <Badge variant="success">Success</Badge>;
       case 'warning':
-        return <Badge variant="warning">Warning</Badge>
+        return <Badge variant="warning">Warning</Badge>;
       case 'error':
-        return <Badge variant="error">Error</Badge>
+        return <Badge variant="error">Error</Badge>;
       default:
-        return null
+        return null;
     }
-  }
+  };
+
+  if (isLoading) return <div>Loading activities...</div>;
+  if (isError) return <div>Error loading activities.</div>;
 
   return (
     <Card>
@@ -87,8 +53,8 @@ export function RecentActivity() {
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          {activities.map((activity) => {
-            const IconComponent = activityIcons[activity.type]
+          {activities?.map((activity) => {
+            const IconComponent = activityIcons[activity.type];
             return (
               <div key={activity.id} className="flex items-start space-x-3">
                 <div className="flex-shrink-0">
@@ -109,10 +75,10 @@ export function RecentActivity() {
                   </p>
                 </div>
               </div>
-            )
+            );
           })}
         </div>
       </CardContent>
     </Card>
-  )
+  );
 }

@@ -1,6 +1,10 @@
-import React from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/card'
-import { formatNumber, formatCurrency } from '../../lib/utils'
+
+import React from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
+import { formatNumber, formatCurrency } from '../../lib/utils';
+import { adminAPI } from '../../lib/api';
+import { DashboardStats } from '../../types';
 import {
   Users,
   Battery,
@@ -10,33 +14,33 @@ import {
   TrendingDown,
   Recycle,
   Zap,
-} from 'lucide-react'
+} from 'lucide-react';
 
 interface StatCardProps {
-  title: string
-  value: string | number
+  title: string;
+  value: string | number;
   change?: {
-    value: number
-    label: string
-    isPositive: boolean
-  }
-  icon: React.ElementType
-  format?: 'number' | 'currency' | 'percentage'
+    value: number;
+    label: string;
+    isPositive: boolean;
+  };
+  icon: React.ElementType;
+  format?: 'number' | 'currency' | 'percentage';
 }
 
 function StatCard({ title, value, change, icon: Icon, format = 'number' }: StatCardProps) {
   const formatValue = (val: string | number) => {
-    if (typeof val === 'string') return val
+    if (typeof val === 'string') return val;
     
     switch (format) {
       case 'currency':
-        return formatCurrency(val)
+        return formatCurrency(val);
       case 'percentage':
-        return `${val}%`
+        return `${val}%`;
       default:
-        return formatNumber(val)
+        return formatNumber(val);
     }
-  }
+  };
 
   return (
     <Card>
@@ -68,50 +72,83 @@ function StatCard({ title, value, change, icon: Icon, format = 'number' }: StatC
         )}
       </CardContent>
     </Card>
-  )
+  );
 }
 
 export function StatsCards() {
-  // This would normally come from API calls
+  const { data, isLoading, isError } = useQuery<DashboardStats>({
+    queryKey: ['dashboardStats'],
+    queryFn: async () => {
+      const response = await adminAPI.getDashboardStats();
+      return response.data;
+    },
+  });
+
+  if (isLoading) {
+    return (
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        {[...Array(6)].map((_, i) => (
+          <Card key={i}>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+            </CardHeader>
+            <CardContent>
+              <div className="h-8 bg-gray-200 rounded w-3/4"></div>
+              <div className="h-3 bg-gray-200 rounded w-1/2 mt-2"></div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    );
+  }
+
+  if (isError || !data) {
+    return (
+      <div className="text-red-500">
+        Error loading dashboard statistics. Please try again later.
+      </div>
+    );
+  }
+
   const stats = [
     {
       title: 'Total Customers',
-      value: 12547,
-      change: { value: 12.5, label: 'from last month', isPositive: true },
+      value: data.totalCustomers.value,
+      change: { value: data.totalCustomers.change, label: 'from last month', isPositive: data.totalCustomers.change >= 0 },
       icon: Users,
     },
     {
       title: 'Active Batteries',
-      value: 8924,
-      change: { value: 8.2, label: 'from last week', isPositive: true },
+      value: data.activeBatteries.value,
+      change: { value: data.activeBatteries.change, label: 'from last week', isPositive: data.activeBatteries.change >= 0 },
       icon: Battery,
     },
     {
       title: 'Swap Stations',
-      value: 156,
-      change: { value: 3, label: 'new this month', isPositive: true },
+      value: data.swapStations.value,
+      change: { value: data.swapStations.change, label: 'new this month', isPositive: data.swapStations.change >= 0 },
       icon: MapPin,
     },
     {
       title: 'Monthly Revenue',
-      value: 245890,
-      change: { value: 15.3, label: 'from last month', isPositive: true },
+      value: data.monthlyRevenue.value,
+      change: { value: data.monthlyRevenue.change, label: 'from last month', isPositive: data.monthlyRevenue.change >= 0 },
       icon: DollarSign,
       format: 'currency' as const,
     },
     {
       title: 'Daily Swaps',
-      value: 1247,
-      change: { value: 5.7, label: 'from yesterday', isPositive: true },
+      value: data.dailySwaps.value,
+      change: { value: data.dailySwaps.change, label: 'from yesterday', isPositive: data.dailySwaps.change >= 0 },
       icon: Zap,
     },
     {
       title: 'CO₂ Saved (kg)',
-      value: 28640,
-      change: { value: 11.2, label: 'this month', isPositive: true },
+      value: data.co2Saved.value,
+      change: { value: data.co2Saved.change, label: 'this month', isPositive: data.co2Saved.change >= 0 },
       icon: Recycle,
     },
-  ]
+  ];
 
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -119,5 +156,5 @@ export function StatsCards() {
         <StatCard key={stat.title} {...stat} />
       ))}
     </div>
-  )
+  );
 }
