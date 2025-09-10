@@ -11,10 +11,10 @@ require('dotenv').config();
 
 const db = require('./config/database');
 const authRoutes = require('./routes/auth');
-const userRoutes = require('./routes/users-simple');
-const stationRoutes = require('./routes/stations-simple');
-const batteryRoutes = require('./routes/batteries-simple');
-const adminRoutes = require('./routes/admin-simple');
+const userRoutes = require('./routes/users');
+const stationRoutes = require('./routes/stations');
+const batteryRoutes = require('./routes/batteries');
+const adminRoutes = require('./routes/admin');
 
 
 const errorHandler = require('./middleware/errorHandler');

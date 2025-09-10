@@ -11,8 +11,7 @@
     "test": "jest",
     "migrate": "knex migrate:latest",
     "rollback": "knex migrate:rollback",
-    "build": "echo 'No build step required'",
-    "postinstall": "node setup-simple-db.js"
+    "build": "echo 'No build step required'"
   },
   "keywords": [
     "ecolithswap",
