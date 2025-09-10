@@ -20,7 +20,7 @@ import {
 } from 'react-native-paper';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { useData } from '../contexts/DataContext';
-import { wasteService } from '../services/wasteService';
+import wasteService from '../services/wasteService';
 import { colors, typography, spacing } from '../utils/theme';
 
 export default function PlasticWasteScreen({ navigation }) {

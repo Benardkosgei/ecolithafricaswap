@@ -11,7 +11,7 @@ import { Card, Button, Chip, FAB, ActivityIndicator } from 'react-native-paper';
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { useData } from '../contexts/DataContext';
-import { stationService } from '../services/stationService';
+import stationService from '../services/stationService';
 import { colors, typography, spacing } from '../utils/theme';
 
 export default function StationDetailScreen({ navigation, route }) {

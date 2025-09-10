@@ -11,7 +11,7 @@ import { Card, ProgressBar, Button } from 'react-native-paper';
 import { LineChart, PieChart, BarChart } from 'react-native-chart-kit';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { useData } from '../contexts/DataContext';
-import { wasteService } from '../services/wasteService';
+import wasteService from '../services/wasteService';
 import { colors, typography, spacing } from '../utils/theme';
 
 const { width: screenWidth } = Dimensions.get('window');

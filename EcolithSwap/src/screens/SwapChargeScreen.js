@@ -10,7 +10,7 @@ import {
 import { Card, Button, FAB, Chip, ActivityIndicator } from 'react-native-paper';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { useData } from '../contexts/DataContext';
-import { batteryService } from '../services/batteryService';
+import batteryService from '../services/batteryService';
 import { colors, typography, spacing } from '../utils/theme';
 
 export default function SwapChargeScreen({ navigation }) {

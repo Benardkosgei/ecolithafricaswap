@@ -12,7 +12,7 @@ import { Searchbar, FAB, Card, Chip, ActivityIndicator } from 'react-native-pape
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { useData } from '../contexts/DataContext';
-import { stationService } from '../services/stationService';
+import stationService from '../services/stationService';
 import { colors, typography, spacing } from '../utils/theme';
 
 const { width, height } = Dimensions.get('window');

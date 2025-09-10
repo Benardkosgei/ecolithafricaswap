@@ -10,8 +10,8 @@ import {
 import { Card, Chip, Searchbar, FAB } from 'react-native-paper';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { useData } from '../contexts/DataContext';
-import { batteryService } from '../services/batteryService';
-import { wasteService } from '../services/wasteService';
+import batteryService from '../services/batteryService';
+import wasteService from '../services/wasteService';
 import { colors, typography, spacing } from '../utils/theme';
 
 export default function HistoryScreen({ navigation }) {

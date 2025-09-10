@@ -147,5 +147,4 @@ class OfflineService {
 }
 
 const offlineService = new OfflineService();
-export { offlineService };
 export default offlineService;
