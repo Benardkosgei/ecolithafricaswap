@@ -142,12 +142,15 @@ async function seedDatabase() {
     
     // Insert users
     console.log('👥 Seeding users...');
-    const users = await trx('users').insert(sampleUsers).returning('id');
-    
+    await trx('users').insert(sampleUsers);
+    const userEmails = sampleUsers.map(u => u.email);
+    const insertedUsers = await trx('users').whereIn('email', userEmails).select('id', 'email');
+    const emailToIdMap = insertedUsers.reduce((acc, user) => ({ ...acc, [user.email]: user.id }), {});
+
     // Insert user profiles
     console.log('📋 Creating user profiles...');
-    const userProfiles = users.map((user, index) => ({
-      user_id: user.id,
+    const userProfiles = sampleUsers.map((user, index) => ({
+      user_id: emailToIdMap[user.email],
       total_points_earned: index === 2 ? 150 : index === 3 ? 89 : 0,
       current_points: index === 2 ? 150 : index === 3 ? 89 : 0,
     }));
@@ -155,13 +158,15 @@ async function seedDatabase() {
     
     // Insert stations
     console.log('🏢 Seeding stations...');
-    const stations = await trx('stations').insert(sampleStations).returning('id');
+    await trx('stations').insert(sampleStations);
+    const stationNames = sampleStations.map(s => s.name);
+    const insertedStations = await trx('stations').whereIn('name', stationNames).select('id');
     
     // Insert batteries and assign to stations
     console.log('🔋 Seeding batteries...');
     const batteriesWithStations = sampleBatteries.map((battery, index) => ({
       ...battery,
-      station_id: stations[index % stations.length].id // Distribute batteries across stations
+      station_id: insertedStations[index % insertedStations.length].id // Distribute batteries across stations
     }));
     await trx('batteries').insert(batteriesWithStations);
     
