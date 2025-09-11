@@ -274,7 +274,7 @@ export function StationListPage() {
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Plastic Accepting</p>
-                <p className="text-2xl font-bold text-blue-600">{stationStats?.plasticAcceptingStations || 0}</p>
+                <p className_="text-2xl font-bold text-blue-600">{stationStats?.plasticAcceptingStations || 0}</p>
               </div>
             </div>
           </CardContent>

@@ -20,12 +20,12 @@ export function TicketDetailsPage() {
 
   const { data: ticket, isLoading, error } = useQuery<SupportTicket>({
     queryKey: ['ticket', id],
-    queryFn: () => supportAPI.getTicket(id!).then((res) => res.data),
+    queryFn: () => supportAPI.getTicket(id!),
     enabled: !!id,
   });
 
   const replyMutation = useMutation<SupportTicket, Error, string>({
-    mutationFn: (message) => supportAPI.replyToTicket(id!, message).then((res) => res.data),
+    mutationFn: (message) => supportAPI.replyToTicket(id!, message),
     onSuccess: () => {
       toast.success('Reply sent successfully!');
       queryClient.invalidateQueries({ queryKey: ['ticket', id] });
@@ -37,7 +37,7 @@ export function TicketDetailsPage() {
   });
 
   const updateStatusMutation = useMutation<SupportTicket, Error, string>({
-    mutationFn: (status) => supportAPI.updateTicketStatus(id!, status).then((res) => res.data),
+    mutationFn: (status) => supportAPI.updateTicketStatus(id!, status),
     onSuccess: () => {
       toast.success('Ticket status updated!');
       queryClient.invalidateQueries({ queryKey: ['ticket', id] });
