@@ -83,16 +83,24 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           const response = await authAPI.getProfile()
           
           if (response.data?.user) {
-            set({
-              user: {
-                id: response.data.user.id,
-                email: response.data.user.email,
-                full_name: response.data.user.full_name,
-                role: response.data.user.role,
-                avatar_url: response.data.user.avatar_url,
-              },
-              isAuthenticated: true,
-            })
+            // Verify user role
+            if (!['admin', 'station_manager'].includes(response.data.user.role)) {
+              // Token is valid but user does not have correct permissions
+              localStorage.removeItem('auth_token')
+              localStorage.removeItem('user')
+              set({ user: null, isAuthenticated: false })
+            } else {
+              set({
+                user: {
+                  id: response.data.user.id,
+                  email: response.data.user.email,
+                  full_name: response.data.user.full_name,
+                  role: response.data.user.role,
+                  avatar_url: response.data.user.avatar_url,
+                },
+                isAuthenticated: true,
+              })
+            }
           } else {
             // Token invalid, clear auth
             localStorage.removeItem('auth_token')

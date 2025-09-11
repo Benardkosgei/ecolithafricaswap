@@ -15,20 +15,26 @@ router.get('/', requireAdmin, async (req, res) => {
       .select('id', 'email', 'full_name', 'phone', 'location', 'role', 'is_active', 'created_at', 'last_login')
       .orderBy('created_at', 'desc');
 
+    let countQuery = db('users').count('id as count').first();
+
     if (search) {
-      query = query.where(function() {
-        this.where('full_name', 'like', `%${search}%`)
-            .orWhere('email', 'like', `%${search}%`)
-            .orWhere('phone', 'like', `%${search}%`);
-      });
+      const searchTerm = `%${search}%`;
+      const searchFilter = function() {
+        this.where('full_name', 'like', searchTerm)
+            .orWhere('email', 'like', searchTerm)
+            .orWhere('phone', 'like', searchTerm);
+      };
+      query = query.where(searchFilter);
+      countQuery = countQuery.where(searchFilter);
     }
 
     if (role) {
       query = query.where('role', role);
+      countQuery = countQuery.where('role', role);
     }
 
     const users = await query.limit(limit).offset(offset);
-    const totalCount = await db('users').count('id as count').first();
+    const totalCount = await countQuery;
 
     res.json({
       users,

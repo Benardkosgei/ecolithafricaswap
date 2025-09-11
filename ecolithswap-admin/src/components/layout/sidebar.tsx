@@ -1,68 +1,44 @@
-import React from 'react'
-import { Link, useLocation } from 'react-router-dom'
-import {
-  LayoutDashboard,
-  Battery,
-  MapPin,
-  Users,
-  CreditCard,
-  BarChart3,
-  Settings,
-  Recycle,
-  Zap,
-  LogOut,
-  ChevronLeft,
-  ChevronRight,
-} from 'lucide-react'
-import { cn } from '../../lib/utils'
-import { useAuthStore } from '../../stores/auth-store'
-import { Button } from '../ui/button'
-
-interface SidebarProps {
-  collapsed: boolean
-  onToggle: () => void
-}
+import React from 'react';
+import { Link, useLocation } from 'react-router-dom';
+import { Home, Battery, ChargingStation, Users, DollarSign, Recycle, BarChart3, Settings, ChevronDown, ChevronRight } from 'lucide-react';
 
 const navigation = [
   {
     name: 'Dashboard',
     href: '/',
-    icon: LayoutDashboard,
+    icon: Home,
   },
   {
     name: 'Battery Management',
-    href: '/batteries',
     icon: Battery,
     children: [
-      { name: 'Inventory', href: '/batteries' },
+      { name: 'Battery List', href: '/batteries' },
       { name: 'Maintenance', href: '/batteries/maintenance' },
       { name: 'Analytics', href: '/batteries/analytics' },
     ],
   },
   {
     name: 'Station Management',
-    href: '/stations',
-    icon: MapPin,
+    icon: ChargingStation,
     children: [
-      { name: 'All Stations', href: '/stations' },
+      { name: 'Station List', href: '/stations' },
       { name: 'Add Station', href: '/stations/add' },
       { name: 'Map View', href: '/stations/map' },
     ],
   },
   {
     name: 'Customer Management',
-    href: '/customers',
     icon: Users,
     children: [
-      { name: 'All Customers', href: '/customers' },
+      { name: 'Customer List', href: '/customers' },
       { name: 'Support Tickets', href: '/customers/support' },
     ],
   },
   {
     name: 'Financial',
-    href: '/financial',
-    icon: CreditCard,
+    icon: DollarSign,
     children: [
+      { name: 'Overview', href: '/financial' },
       { name: 'Transactions', href: '/financial/transactions' },
       { name: 'Revenue Reports', href: '/financial/revenue' },
       { name: 'Pricing', href: '/financial/pricing' },
@@ -70,129 +46,89 @@ const navigation = [
   },
   {
     name: 'Environmental Impact',
-    href: '/environmental',
     icon: Recycle,
+    children: [
+        { name: 'Overview', href: '/environmental' },
+        { name: 'Waste Submissions', href: '/environmental/submissions' },
+        { name: 'Leaderboard', href: '/environmental/leaderboard' },
+    ],
   },
   {
     name: 'Analytics & Reports',
-    href: '/analytics',
     icon: BarChart3,
+    children: [
+        { name: 'Dashboard', href: '/analytics' },
+        { name: 'Usage Analytics', href: '/analytics/usage' },
+        { name: 'User Analytics', href: '/analytics/users' },
+        { name: 'Geographic Analysis', href: '/analytics/geo' },
+    ]
   },
   {
     name: 'Settings',
-    href: '/settings',
     icon: Settings,
+    children: [
+      { name: 'General', href: '/settings' },
+      { name: 'User Management', href: '/settings/users' },
+      { name: 'API Keys', href: '/settings/api-keys' },
+      { name: 'Billing', href: '/settings/billing' },
+      { name: 'Audit Logs', href: '/settings/audit-logs' },
+    ]
   },
-]
+];
 
-export function Sidebar({ collapsed, onToggle }: SidebarProps) {
-  const location = useLocation()
-  const { logout, user } = useAuthStore()
+const NavItem = ({ item }) => {
+  const { pathname } = useLocation();
+  const [isOpen, setIsOpen] = React.useState(pathname.startsWith(item.children ? `/settings` : (item.href || 'a')));
 
-  const isActive = (href: string) => {
-    if (href === '/') {
-      return location.pathname === '/'
-    }
-    return location.pathname.startsWith(href)
-  }
-
-  return (
-    <div
-      className={cn(
-        'flex flex-col bg-white border-r border-gray-200 transition-all duration-300',
-        collapsed ? 'w-16' : 'w-64'
-      )}
-    >
-      {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-gray-200">
-        <div className="flex items-center space-x-2">
-          <div className="w-8 h-8 bg-[#2E7D32] rounded-lg flex items-center justify-center">
-            <Zap className="w-5 h-5 text-white" />
-          </div>
-          {!collapsed && (
-            <span className="font-bold text-xl text-gray-900">EcolithSwap</span>
-          )}
-        </div>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={onToggle}
-          className="w-8 h-8"
+  if (item.children) {
+    return (
+      <div>
+        <button
+          onClick={() => setIsOpen(!isOpen)}
+          className="flex items-center justify-between w-full px-4 py-2 text-left text-gray-700 hover:bg-gray-200 rounded-md"
         >
-          {collapsed ? (
-            <ChevronRight className="w-4 h-4" />
-          ) : (
-            <ChevronLeft className="w-4 h-4" />
-          )}
-        </Button>
-      </div>
-
-      {/* Navigation */}
-      <nav className="flex-1 px-2 py-4 space-y-1 overflow-y-auto">
-        {navigation.map((item) => {
-          const isItemActive = isActive(item.href)
-          return (
-            <div key={item.name}>
+          <div className="flex items-center">
+            <item.icon className="h-5 w-5 mr-3" />
+            {item.name}
+          </div>
+          {isOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+        </button>
+        {isOpen && (
+          <div className="pl-8 py-2 space-y-1">
+            {item.children.map((child) => (
               <Link
-                to={item.href}
-                className={cn(
-                  'group flex items-center px-2 py-2 text-sm font-medium rounded-md transition-colors',
-                  isItemActive
-                    ? 'bg-[#2E7D32] text-white'
-                    : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                )}
-              >
-                <item.icon
-                  className={cn(
-                    'mr-3 flex-shrink-0 h-5 w-5',
-                    collapsed && 'mr-0'
-                  )}
-                />
-                {!collapsed && item.name}
+                key={child.name}
+                to={child.href}
+                className={`block px-4 py-2 text-sm rounded-md ${pathname === child.href ? 'bg-primary text-white' : 'text-gray-600 hover:bg-gray-100'}`}>
+                {child.name}
               </Link>
-              
-              {/* Sub-navigation */}
-              {!collapsed && item.children && isItemActive && (
-                <div className="ml-8 mt-1 space-y-1">
-                  {item.children.map((child) => (
-                    <Link
-                      key={child.name}
-                      to={child.href}
-                      className={cn(
-                        'block px-3 py-1 text-sm text-gray-600 hover:text-gray-900 rounded-md hover:bg-gray-50',
-                        location.pathname === child.href && 'text-[#2E7D32] font-medium'
-                      )}
-                    >
-                      {child.name}
-                    </Link>
-                  ))}
-                </div>
-              )}
-            </div>
-          )
-        })}
-      </nav>
-
-      {/* User section */}
-      <div className="p-4 border-t border-gray-200">
-        {!collapsed && user && (
-          <div className="mb-3">
-            <p className="text-sm font-medium text-gray-900">{user.full_name}</p>
-            <p className="text-xs text-gray-500">{user.role}</p>
+            ))}
           </div>
         )}
-        <Button
-          variant="ghost"
-          onClick={() => logout()}
-          className={cn(
-            'w-full justify-start',
-            collapsed && 'justify-center px-0'
-          )}
-        >
-          <LogOut className={cn('h-4 w-4', !collapsed && 'mr-2')} />
-          {!collapsed && 'Sign Out'}
-        </Button>
       </div>
-    </div>
-  )
+    );
+  } else {
+    return (
+      <Link
+        to={item.href}
+        className={`flex items-center px-4 py-2 text-gray-700 rounded-md ${pathname === item.href ? 'bg-primary text-white' : 'hover:bg-gray-200'}`}>
+        <item.icon className="h-5 w-5 mr-3" />
+        {item.name}
+      </Link>
+    );
+  }
+};
+
+export function Sidebar() {
+  return (
+    <aside className="w-64 bg-white border-r border-gray-200 p-4">
+      <div className="flex items-center mb-8">
+        <img src="/logo.png" alt="EcolithSwap Logo" className="h-8 w-auto" />
+        <span className="text-xl font-bold ml-2 text-gray-800">EcolithSwap</span>
+      </div>
+      <nav className="space-y-2">
+        {navigation.map((item) => <NavItem key={item.name} item={item} />)}
+      </nav>
+    </aside>
+  );
 }

@@ -34,29 +34,37 @@ router.get('/', async (req, res) => {
       .leftJoin('users', 'battery_rentals.user_id', 'users.id')
       .orderBy(`batteries.${sort_by}`, sort_order);
 
+    let countQuery = db('batteries').count('id as count').first();
+
     // Search filter
     if (search) {
-      query = query.where(function() {
-        this.where('batteries.battery_code', 'like', `%${search}%`)
-            .orWhere('batteries.serial_number', 'like', `%${search}%`)
-            .orWhere('batteries.model', 'like', `%${search}%`);
-      });
+      const searchTerm = `%${search}%`;
+      const searchFilter = function() {
+        this.where('batteries.battery_code', 'like', searchTerm)
+            .orWhere('batteries.serial_number', 'like', searchTerm)
+            .orWhere('batteries.model', 'like', searchTerm);
+      };
+      query = query.where(searchFilter);
+      countQuery = countQuery.where(searchFilter);
     }
 
     if (station_id) {
       query = query.where('batteries.station_id', station_id);
+      countQuery = countQuery.where('batteries.station_id', station_id);
     }
 
     if (status) {
       query = query.where('batteries.status', status);
+      countQuery = countQuery.where('batteries.status', status);
     }
 
     if (health_status) {
       query = query.where('batteries.health_status', health_status);
+      countQuery = countQuery.where('batteries.health_status', health_status);
     }
 
     const batteries = await query.limit(limit).offset(offset);
-    const totalCount = await db('batteries').count('id as count').first();
+    const totalCount = await countQuery;
 
     res.json({
       batteries,

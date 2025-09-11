@@ -20,6 +20,7 @@ export default function ImpactScreen({ navigation }) {
   const { userStats, isOnline } = useData();
   const [impactStats, setImpactStats] = useState(null);
   const [leaderboard, setLeaderboard] = useState([]);
+  const [monthlyData, setMonthlyData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -31,12 +32,28 @@ export default function ImpactScreen({ navigation }) {
     try {
       setLoading(true);
       if (isOnline) {
-        const [impact, leaders] = await Promise.all([
+        const [impact, leaders, monthly] = await Promise.all([
           wasteService.getImpactStats(),
           wasteService.getLeaderboard(5),
+          wasteService.getMonthlyWasteStats(),
         ]);
         setImpactStats(impact);
         setLeaderboard(leaders);
+
+        if (monthly) {
+          const labels = monthly.map(item => item.month);
+          const data = monthly.map(item => item.co2Saved);
+          setMonthlyData({
+            labels,
+            datasets: [
+              {
+                data,
+                color: (opacity = 1) => `rgba(46, 125, 50, ${opacity})`,
+                strokeWidth: 2,
+              },
+            ],
+          });
+        }
       }
     } catch (error) {
       console.error('Error loading impact data:', error);
@@ -83,17 +100,6 @@ export default function ImpactScreen({ navigation }) {
       legendFontSize: 12,
     },
   ];
-
-  const monthlyData = {
-    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-    datasets: [
-      {
-        data: [2, 4, 6, 8, 10, 12], // Sample data - replace with actual monthly data
-        color: (opacity = 1) => `rgba(46, 125, 50, ${opacity})`,
-        strokeWidth: 2,
-      },
-    ],
-  };
 
   const chartConfig = {
     backgroundColor: colors.surface,
@@ -232,14 +238,21 @@ export default function ImpactScreen({ navigation }) {
       <Card style={styles.chartCard}>
         <Card.Content>
           <Text style={styles.chartTitle}>Monthly CO₂ Savings</Text>
-          <LineChart
-            data={monthlyData}
-            width={screenWidth - 64}
-            height={200}
-            chartConfig={chartConfig}
-            bezier
-            style={styles.chart}
-          />
+          {monthlyData ? (
+            <LineChart
+              data={monthlyData}
+              width={screenWidth - 64}
+              height={200}
+              chartConfig={chartConfig}
+              bezier
+              style={styles.chart}
+            />
+          ) : (
+            <View style={styles.emptyChart}>
+              <Icon name="timeline" size={48} color={colors.textSecondary} />
+              <Text style={styles.emptyText}>No monthly data available yet.</Text>
+            </View>
+          )}
         </Card.Content>
       </Card>
 
@@ -439,7 +452,7 @@ const styles = StyleSheet.create({
     ...typography.h3,
     marginBottom: spacing.xs,
   },
-  cardSubtitle: {
+  cardSubtitle:. {
     ...typography.body,
     color: colors.textSecondary,
     marginBottom: spacing.md,

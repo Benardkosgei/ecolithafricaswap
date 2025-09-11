@@ -95,7 +95,7 @@ const requireOwnershipOrAdmin = (userIdField = 'user_id') => {
   return (req, res, next) => {
     const resourceUserId = req.params[userIdField] || req.body[userIdField];
     
-    if (req.user.role === 'admin' || req.user.userId === resourceUserId) {
+    if (req.user.role === 'admin' || req.user.userId === parseInt(resourceUserId)) {
       next();
     } else {
       return res.status(403).json({ 

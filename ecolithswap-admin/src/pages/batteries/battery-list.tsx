@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import {
   Table,
   TableBody,
@@ -18,84 +19,49 @@ import {
   Plus,
   Edit,
   Trash2,
-  Battery,
+  Battery as BatteryIcon,
   MapPin,
 } from 'lucide-react'
-import { formatDate, getStatusColor } from '../../lib/utils'
+import { formatDate, getStatusColor, formatNumber } from '../../lib/utils'
+import { batteriesAPI, Battery, BatteryStats, PaginationResponse } from '../../lib/api'
 
-interface BatteryData {
-  id: string
-  serialNumber: string
-  model: string
-  capacityMah: number
-  chargeLevel: number
-  healthPercentage: number
-  status: string
-  stationName?: string
-  lastService: string
-  totalCycles: number
-}
-
-// Mock data - would come from API
-const mockBatteries: BatteryData[] = [
-  {
-    id: '1',
-    serialNumber: 'BAT-2024-001',
-    model: 'EcoLith Pro 5000',
-    capacityMah: 5000,
-    chargeLevel: 85,
-    healthPercentage: 98,
-    status: 'available',
-    stationName: 'Downtown Mall',
-    lastService: '2025-01-15T10:30:00Z',
-    totalCycles: 245,
-  },
-  {
-    id: '2',
-    serialNumber: 'BAT-2024-002',
-    model: 'EcoLith Pro 5000',
-    capacityMah: 5000,
-    chargeLevel: 15,
-    healthPercentage: 92,
-    status: 'charging',
-    stationName: 'Central Park',
-    lastService: '2025-01-10T14:20:00Z',
-    totalCycles: 387,
-  },
-  {
-    id: '3',
-    serialNumber: 'BAT-2024-003',
-    model: 'EcoLith Standard 3000',
-    capacityMah: 3000,
-    chargeLevel: 0,
-    healthPercentage: 75,
-    status: 'maintenance',
-    lastService: '2024-12-28T09:15:00Z',
-    totalCycles: 892,
-  },
-  {
-    id: '4',
-    serialNumber: 'BAT-2024-004',
-    model: 'EcoLith Pro 5000',
-    capacityMah: 5000,
-    chargeLevel: 95,
-    healthPercentage: 89,
-    status: 'in-use',
-    lastService: '2025-01-20T11:45:00Z',
-    totalCycles: 456,
-  },
-]
+const DEBOUNCE_DELAY = 300;
 
 export function BatteryListPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
+  const [page, setPage] = useState(1)
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState(searchTerm);
 
-  const filteredBatteries = mockBatteries.filter((battery) => {
-    const matchesSearch = battery.serialNumber
-      .toLowerCase()
-      .includes(searchTerm.toLowerCase())
-    const matchesStatus = statusFilter === 'all' || battery.status === statusFilter
-    return matchesSearch && matchesStatus
+  React.useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, DEBOUNCE_DELAY);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [searchTerm]);
+
+
+  const { data: statsData, isLoading: statsLoading } = useQuery<BatteryStats>({
+    queryKey: ['batteryStats'],
+    queryFn: async () => {
+      const response = await batteriesAPI.getBatteryStats()
+      return response.data
+    },
+  })
+
+  const { data: batteryData, isLoading: batteriesLoading } = useQuery<PaginationResponse<Battery>>({
+    queryKey: ['batteries', page, debouncedSearchTerm, statusFilter],
+    queryFn: async () => {
+      const response = await batteriesAPI.getBatteries({
+        page,
+        search: debouncedSearchTerm,
+        status: statusFilter === 'all' ? undefined : statusFilter,
+      })
+      return response.data
+    },
   })
 
   const getChargeColor = (level: number) => {
@@ -131,10 +97,10 @@ export function BatteryListPage() {
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center">
-              <Battery className="h-8 w-8 text-[#2E7D32]" />
+              <BatteryIcon className="h-8 w-8 text-[#2E7D32]" />
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Total Batteries</p>
-                <p className="text-2xl font-bold">8,924</p>
+                <p className="text-2xl font-bold">{statsLoading ? '...' : formatNumber(statsData?.totalBatteries ?? 0)}</p>
               </div>
             </div>
           </CardContent>
@@ -144,11 +110,11 @@ export function BatteryListPage() {
           <CardContent className="p-6">
             <div className="flex items-center">
               <div className="h-8 w-8 bg-green-100 rounded-full flex items-center justify-center">
-                <Battery className="h-4 w-4 text-green-600" />
+                <BatteryIcon className="h-4 w-4 text-green-600" />
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Available</p>
-                <p className="text-2xl font-bold text-green-600">4,234</p>
+                <p className="text-2xl font-bold text-green-600">{statsLoading ? '...' : formatNumber(statsData?.availableBatteries ?? 0)}</p>
               </div>
             </div>
           </CardContent>
@@ -158,11 +124,11 @@ export function BatteryListPage() {
           <CardContent className="p-6">
             <div className="flex items-center">
               <div className="h-8 w-8 bg-blue-100 rounded-full flex items-center justify-center">
-                <Battery className="h-4 w-4 text-blue-600" />
+                <BatteryIcon className="h-4 w-4 text-blue-600" />
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">In Use</p>
-                <p className="text-2xl font-bold text-blue-600">2,890</p>
+                <p className="text-2xl font-bold text-blue-600">{statsLoading ? '...' : formatNumber(statsData?.inUseBatteries ?? 0)}</p>
               </div>
             </div>
           </CardContent>
@@ -172,11 +138,11 @@ export function BatteryListPage() {
           <CardContent className="p-6">
             <div className="flex items-center">
               <div className="h-8 w-8 bg-yellow-100 rounded-full flex items-center justify-center">
-                <Battery className="h-4 w-4 text-yellow-600" />
+                <BatteryIcon className="h-4 w-4 text-yellow-600" />
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Charging</p>
-                <p className="text-2xl font-bold text-yellow-600">1,256</p>
+                <p className="text-2xl font-bold text-yellow-600">{statsLoading ? '...' : formatNumber(statsData?.chargingBatteries ?? 0)}</p>
               </div>
             </div>
           </CardContent>
@@ -221,82 +187,106 @@ export function BatteryListPage() {
           </div>
 
           {/* Batteries Table */}
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Serial Number</TableHead>
-                <TableHead>Model</TableHead>
-                <TableHead>Capacity</TableHead>
-                <TableHead>Charge Level</TableHead>
-                <TableHead>Health</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Location</TableHead>
-                <TableHead>Last Service</TableHead>
-                <TableHead>Cycles</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredBatteries.map((battery) => (
-                <TableRow key={battery.id}>
-                  <TableCell className="font-medium">
-                    {battery.serialNumber}
-                  </TableCell>
-                  <TableCell>{battery.model}</TableCell>
-                  <TableCell>{battery.capacityMah} mAh</TableCell>
-                  <TableCell>
-                    <div className="flex items-center">
-                      <div className="w-full bg-gray-200 rounded-full h-2 mr-2">
-                        <div
-                          className={`h-2 rounded-full ${
-                            battery.chargeLevel >= 70
-                              ? 'bg-green-500'
-                              : battery.chargeLevel >= 30
-                              ? 'bg-yellow-500'
-                              : 'bg-red-500'
-                          }`}
-                          style={{ width: `${battery.chargeLevel}%` }}
-                        />
-                      </div>
-                      <span className={`text-sm font-medium ${getChargeColor(battery.chargeLevel)}`}>
-                        {battery.chargeLevel}%
-                      </span>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <span className={`font-medium ${getHealthColor(battery.healthPercentage)}`}>
-                      {battery.healthPercentage}%
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    <Badge className={getStatusColor(battery.status)}>
-                      {battery.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    {battery.stationName && (
-                      <div className="flex items-center">
-                        <MapPin className="h-4 w-4 mr-1 text-gray-400" />
-                        {battery.stationName}
-                      </div>
-                    )}
-                  </TableCell>
-                  <TableCell>{formatDate(battery.lastService)}</TableCell>
-                  <TableCell>{battery.totalCycles}</TableCell>
-                  <TableCell>
-                    <div className="flex items-center space-x-2">
-                      <Button variant="ghost" size="icon">
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="icon">
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
+          {batteriesLoading ? (
+            <p>Loading batteries...</p>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Serial Number</TableHead>
+                  <TableHead>Model</TableHead>
+                  <TableHead>Capacity</TableHead>
+                  <TableHead>Charge Level</TableHead>
+                  <TableHead>Health</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Location</TableHead>
+                  <TableHead>Last Service</TableHead>
+                  <TableHead>Cycles</TableHead>
+                  <TableHead>Actions</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {batteryData?.data.map((battery) => (
+                  <TableRow key={battery.id}>
+                    <TableCell className="font-medium">
+                      {battery.serialNumber}
+                    </TableCell>
+                    <TableCell>{battery.model}</TableCell>
+                    <TableCell>{battery.capacityMah} mAh</TableCell>
+                    <TableCell>
+                      <div className="flex items-center">
+                        <div className="w-full bg-gray-200 rounded-full h-2 mr-2">
+                          <div
+                            className={`h-2 rounded-full ${
+                              battery.chargeLevel >= 70
+                                ? 'bg-green-500'
+                                : battery.chargeLevel >= 30
+                                ? 'bg-yellow-500'
+                                : 'bg-red-500'
+                            }`}
+                            style={{ width: `${battery.chargeLevel}%` }}
+                          />
+                        </div>
+                        <span className={`text-sm font-medium ${getChargeColor(battery.chargeLevel)}`}>
+                          {battery.chargeLevel}%
+                        </span>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <span className={`font-medium ${getHealthColor(battery.healthPercentage)}`}>
+                        {battery.healthPercentage}%
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      <Badge className={getStatusColor(battery.status)}>
+                        {battery.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      {battery.stationName && (
+                        <div className="flex items-center">
+                          <MapPin className="h-4 w-4 mr-1 text-gray-400" />
+                          {battery.stationName}
+                        </div>
+                      )}
+                    </TableCell>
+                    <TableCell>{formatDate(battery.lastService)}</TableCell>
+                    <TableCell>{battery.totalCycles}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center space-x-2">
+                        <Button variant="ghost" size="icon">
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon">
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+          {/* Pagination Controls */}
+          <div className="flex justify-end items-center space-x-4 mt-6">
+            <Button
+              variant="outline"
+              onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
+              disabled={page === 1}
+            >
+              Previous
+            </Button>
+            <span>
+              Page {page} of {batteryData?.pagination.totalPages ?? 1}
+            </span>
+            <Button
+              variant="outline"
+              onClick={() => setPage((prev) => prev + 1)}
+              disabled={page === batteryData?.pagination.totalPages}
+            >
+              Next
+            </Button>
+          </div>
         </CardContent>
       </Card>
     </div>

@@ -1,4 +1,5 @@
 import React from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card'
 import { Button } from '../../components/ui/button'
 import {
@@ -26,29 +27,31 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts'
-
-// Sample data
-const co2SavingsData = [
-  { month: 'Jan', co2Saved: 2340, plasticRecycled: 890, swaps: 12450 },
-  { month: 'Feb', co2Saved: 2680, plasticRecycled: 1020, swaps: 14230 },
-  { month: 'Mar', co2Saved: 2450, plasticRecycled: 950, swaps: 13120 },
-  { month: 'Apr', co2Saved: 3120, plasticRecycled: 1180, swaps: 16890 },
-  { month: 'May', co2Saved: 2890, plasticRecycled: 1090, swaps: 15670 },
-  { month: 'Jun', co2Saved: 3450, plasticRecycled: 1340, swaps: 18920 },
-  { month: 'Jul', co2Saved: 3680, plasticRecycled: 1420, swaps: 20150 },
-]
-
-const weeklyImpactData = [
-  { day: 'Mon', co2: 145, plastic: 58, energy: 234 },
-  { day: 'Tue', co2: 167, plastic: 63, energy: 267 },
-  { day: 'Wed', co2: 134, plastic: 52, energy: 213 },
-  { day: 'Thu', co2: 189, plastic: 71, energy: 289 },
-  { day: 'Fri', co2: 203, plastic: 78, energy: 312 },
-  { day: 'Sat', co2: 234, plastic: 89, energy: 356 },
-  { day: 'Sun', co2: 178, plastic: 67, energy: 278 },
-]
+import { adminAPI, EnvironmentalImpact } from '../../lib/api'
 
 export function EnvironmentalImpactPage() {
+  const { data, isLoading, isError } = useQuery<EnvironmentalImpact>({
+    queryKey: ['environmentalImpact'],
+    queryFn: async () => {
+      const response = await adminAPI.getEnvironmentalImpact('last_30_days')
+      return response.data
+    },
+  })
+
+  if (isLoading) {
+    return <div>Loading environmental impact data...</div>
+  }
+
+  if (isError || !data) {
+    return (
+      <div className="text-red-500">
+        Error loading environmental impact data. Please try again later.
+      </div>
+    )
+  }
+
+  const { co2Saved, plasticRecycled, energySaved, treesEquivalent, monthlyData, weeklyData, summary } = data
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -85,10 +88,10 @@ export function EnvironmentalImpactPage() {
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">CO₂ Saved</p>
-                <p className="text-2xl font-bold text-green-600">{formatNumber(28640)} kg</p>
+                <p className="text-2xl font-bold text-green-600">{formatNumber(co2Saved.value)} kg</p>
                 <div className="flex items-center mt-1">
                   <TrendingUp className="h-3 w-3 text-green-500 mr-1" />
-                  <span className="text-xs text-green-600">+11.2% this month</span>
+                  <span className="text-xs text-green-600">+{co2Saved.change.toFixed(1)}% this month</span>
                 </div>
               </div>
             </div>
@@ -103,10 +106,10 @@ export function EnvironmentalImpactPage() {
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Plastic Recycled</p>
-                <p className="text-2xl font-bold text-blue-600">{formatNumber(11250)} kg</p>
+                <p className="text-2xl font-bold text-blue-600">{formatNumber(plasticRecycled.value)} kg</p>
                 <div className="flex items-center mt-1">
                   <TrendingUp className="h-3 w-3 text-green-500 mr-1" />
-                  <span className="text-xs text-green-600">+8.5% this month</span>
+                  <span className="text-xs text-green-600">+{plasticRecycled.change.toFixed(1)}% this month</span>
                 </div>
               </div>
             </div>
@@ -121,10 +124,10 @@ export function EnvironmentalImpactPage() {
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Energy Saved</p>
-                <p className="text-2xl font-bold text-yellow-600">{formatNumber(145890)} kWh</p>
+                <p className="text-2xl font-bold text-yellow-600">{formatNumber(energySaved.value)} kWh</p>
                 <div className="flex items-center mt-1">
                   <TrendingUp className="h-3 w-3 text-green-500 mr-1" />
-                  <span className="text-xs text-green-600">+13.7% this month</span>
+                  <span className="text-xs text-green-600">+{energySaved.change.toFixed(1)}% this month</span>
                 </div>
               </div>
             </div>
@@ -139,7 +142,7 @@ export function EnvironmentalImpactPage() {
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Trees Equivalent</p>
-                <p className="text-2xl font-bold text-green-600">{formatNumber(1247)}</p>
+                <p className="text-2xl font-bold text-green-600">{formatNumber(treesEquivalent)}</p>
                 <div className="flex items-center mt-1">
                   <span className="text-xs text-gray-500">CO₂ absorption equivalent</span>
                 </div>
@@ -158,7 +161,7 @@ export function EnvironmentalImpactPage() {
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
-              <AreaChart data={co2SavingsData}>
+              <AreaChart data={monthlyData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                 <XAxis dataKey="month" tick={{ fontSize: 12 }} />
                 <YAxis tick={{ fontSize: 12 }} />
@@ -198,7 +201,7 @@ export function EnvironmentalImpactPage() {
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={weeklyImpactData}>
+              <BarChart data={weeklyData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                 <XAxis dataKey="day" tick={{ fontSize: 12 }} />
                 <YAxis tick={{ fontSize: 12 }} />
@@ -233,15 +236,15 @@ export function EnvironmentalImpactPage() {
             <div className="space-y-4">
               <div className="flex justify-between items-center">
                 <span className="text-sm text-gray-600">Total CO₂ Saved</span>
-                <span className="font-semibold">{formatNumber(28640)} kg</span>
+                <span className="font-semibold">{formatNumber(summary.carbon.total)} kg</span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-sm text-gray-600">Equivalent Cars Off Road</span>
-                <span className="font-semibold">{formatNumber(62)} cars/year</span>
+                <span className="font-semibold">{formatNumber(summary.carbon.carsOffRoad)} cars/year</span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-sm text-gray-600">Tree Planting Equivalent</span>
-                <span className="font-semibold">{formatNumber(1247)} trees</span>
+                <span className="font-semibold">{formatNumber(summary.carbon.treesEquivalent)} trees</span>
               </div>
             </div>
           </CardContent>
@@ -258,15 +261,15 @@ export function EnvironmentalImpactPage() {
             <div className="space-y-4">
               <div className="flex justify-between items-center">
                 <span className="text-sm text-gray-600">Total Plastic Recycled</span>
-                <span className="font-semibold">{formatNumber(11250)} kg</span>
+                <span className="font-semibold">{formatNumber(summary.plastic.total)} kg</span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-sm text-gray-600">Bottles Diverted</span>
-                <span className="font-semibold">{formatNumber(562500)} bottles</span>
+                <span className="font-semibold">{formatNumber(summary.plastic.bottlesDiverted)} bottles</span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-sm text-gray-600">Ocean Plastic Prevented</span>
-                <span className="font-semibold">{formatNumber(3375)} kg</span>
+                <span className="font-semibold">{formatNumber(summary.plastic.oceanPlasticPrevented)} kg</span>
               </div>
             </div>
           </CardContent>
@@ -283,15 +286,15 @@ export function EnvironmentalImpactPage() {
             <div className="space-y-4">
               <div className="flex justify-between items-center">
                 <span className="text-sm text-gray-600">Total Energy Saved</span>
-                <span className="font-semibold">{formatNumber(145890)} kWh</span>
+                <span className="font-semibold">{formatNumber(summary.energy.total)} kWh</span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-sm text-gray-600">Homes Powered</span>
-                <span className="font-semibold">{formatNumber(234)} homes/month</span>
+                <span className="font-semibold">{formatNumber(summary.energy.homesPowered)} homes/month</span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-sm text-gray-600">Coal Avoided</span>
-                <span className="font-semibold">{formatNumber(73)} tons</span>
+                <span className="font-semibold">{formatNumber(summary.energy.coalAvoided)} tons</span>
               </div>
             </div>
           </CardContent>

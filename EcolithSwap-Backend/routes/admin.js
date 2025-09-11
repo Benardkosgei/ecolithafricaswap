@@ -241,11 +241,12 @@ router.get('/analytics/usage', requireAdminOrManager, async (req, res) => {
     // Battery usage efficiency
     const batteryUsage = await db('batteries')
       .select(
-        'battery_type',
+        'model',
         db.raw('COUNT(*) as total_batteries'),
-        db.raw('AVG(charge_level) as avg_charge_level')
+        db.raw('AVG(cycle_count) as avg_cycle_count')
       )
-      .groupBy('battery_type')
+      .where('created_at', '>=', startDate)
+      .groupBy('model')
       .orderBy('total_batteries', 'desc');
 
     res.json({

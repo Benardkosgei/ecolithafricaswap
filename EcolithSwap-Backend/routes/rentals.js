@@ -27,19 +27,24 @@ router.get('/', async (req, res) => {
       .leftJoin('stations as return_stations', 'battery_rentals.return_station_id', 'return_stations.id')
       .orderBy('battery_rentals.created_at', 'desc');
 
+    let countQuery = db('battery_rentals').count('id as count').first();
+
     // Filter by user if not admin
     if (req.user.role === 'customer') {
       query = query.where('battery_rentals.user_id', req.user.userId);
+      countQuery = countQuery.where('battery_rentals.user_id', req.user.userId);
     } else if (user_id) {
       query = query.where('battery_rentals.user_id', user_id);
+      countQuery = countQuery.where('battery_rentals.user_id', user_id);
     }
 
     if (status) {
       query = query.where('battery_rentals.status', status);
+      countQuery = countQuery.where('battery_rentals.status', status);
     }
 
     const rentals = await query.limit(limit).offset(offset);
-    const totalCount = await db('battery_rentals').count('id as count').first();
+    const totalCount = await countQuery;
 
     res.json({
       rentals,

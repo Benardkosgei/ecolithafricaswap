@@ -24,19 +24,24 @@ router.get('/', async (req, res) => {
       .leftJoin('stations', 'plastic_waste_logs.station_id', 'stations.id')
       .orderBy('plastic_waste_logs.created_at', 'desc');
 
+    let countQuery = db('plastic_waste_logs').count('id as count').first();
+
     // Filter by user if not admin
     if (req.user.role === 'customer') {
       query = query.where('plastic_waste_logs.user_id', req.user.userId);
+      countQuery = countQuery.where('plastic_waste_logs.user_id', req.user.userId);
     } else if (user_id) {
       query = query.where('plastic_waste_logs.user_id', user_id);
+      countQuery = countQuery.where('plastic_waste_logs.user_id', user_id);
     }
 
     if (waste_type) {
       query = query.where('plastic_waste_logs.waste_type', waste_type);
+      countQuery = countQuery.where('plastic_waste_logs.waste_type', waste_type);
     }
 
     const wasteLogs = await query.limit(limit).offset(offset);
-    const totalCount = await db('plastic_waste_logs').count('id as count').first();
+    const totalCount = await countQuery;
 
     res.json({
       wasteLogs,

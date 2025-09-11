@@ -2,7 +2,7 @@ import axios from 'axios'
 
 // API Configuration
 // Use environment variable or fallback to localhost (backend must be running locally)
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api'
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
 
 export const api = axios.create({
   baseURL: API_BASE_URL,
@@ -54,6 +54,148 @@ export interface PaginationResponse<T> {
   }
 }
 
+export interface EnvironmentalImpact {
+  co2Saved: {
+    value: number
+    change: number
+  }
+  plasticRecycled: {
+    value: number
+    change: number
+  }
+  energySaved: {
+    value: number
+    change: number
+  }
+  treesEquivalent: number
+  monthlyData: {
+    month: string
+    co2Saved: number
+    plasticRecycled: number
+    swaps: number
+  }[]
+  weeklyData: {
+    day: string
+    co2: number
+    plastic: number
+    energy: number
+  }[]
+  summary: {
+    carbon: {
+      total: number
+      carsOffRoad: number
+      treesEquivalent: number
+    }
+    plastic: {
+      total: number
+      bottlesDiverted: number
+      oceanPlasticPrevented: number
+    }
+    energy: {
+      total: number
+      homesPowered: number
+      coalAvoided: number
+    }
+  }
+}
+
+export interface FinancialOverview {
+  totalRevenue: {
+    value: number
+    change: number
+  }
+  transactions: {
+    value: number
+    change: number
+  }
+  avgTransaction: {
+    value: number
+    change: number
+  }
+  monthlyGrowth: {
+    value: number
+    vsLastMonth: number
+  }
+  revenueData: {
+    month: string
+    revenue: number
+    transactions: number
+    avgTransaction: number
+  }[]
+  paymentMethodData: {
+    name: string
+    value: number
+    color: string
+  }[]
+  dailyRevenueData: {
+    day: string
+    revenue: number
+    swaps: number
+  }[]
+}
+
+export interface CustomerStats {
+  totalCustomers: number
+  activeCustomers: number
+  premiumCustomers: number
+  avgLoyaltyPoints: number
+}
+
+export interface Customer {
+  id: string
+  name: string
+  email: string
+  phone: string
+  subscriptionType: string
+  subscriptionStatus: string
+  totalSwaps: number
+  loyaltyPoints: number
+  totalSpent: number
+  registrationDate: string
+  lastSwapDate: string
+  isVerified: boolean
+}
+
+export interface Battery {
+  id: string
+  serialNumber: string
+  model: string
+  capacityMah: number
+  chargeLevel: number
+  healthPercentage: number
+  status: string
+  stationName?: string
+  lastService: string
+  totalCycles: number
+}
+
+export interface BatteryStats {
+  totalBatteries: number
+  availableBatteries: number
+  inUseBatteries: number
+  chargingBatteries: number
+}
+
+export interface MaintenanceTask {
+  id: string;
+  batteryId: string;
+  serviceDate: string;
+  technician: string;
+  status: 'pending' | 'in-progress' | 'completed';
+  notes: string;
+}
+
+export interface SupportTicket {
+  id: string;
+  user: Customer;
+  subject: string;
+  status: 'open' | 'in-progress' | 'resolved' | 'closed';
+  priority: 'low' | 'medium' | 'high' | 'urgent';
+  createdAt: string;
+  updatedAt: string;
+  messages: { sender: string; content: string; timestamp: string }[];
+}
+
 // Auth API
 export const authAPI = {
   login: (email: string, password: string) =>
@@ -74,9 +216,10 @@ export const usersAPI = {
     limit?: number
     search?: string
     role?: string
+    status?: string
     sort_by?: string
     sort_order?: 'asc' | 'desc'
-  }) => api.get('/users', { params }),
+  }) => api.get<PaginationResponse<Customer>>('/users', { params }),
   
   getUser: (id: string) => api.get(`/users/${id}`),
   
@@ -88,7 +231,7 @@ export const usersAPI = {
   
   deleteUser: (id: string) => api.delete(`/users/${id}`),
   
-  getUserStats: () => api.get('/users/stats/overview'),
+  getUserStats: () => api.get<CustomerStats>('/users/stats/overview'),
   
   bulkUpdateUsers: (user_ids: string[], update_data: any) =>
     api.patch('/users/bulk/update', { user_ids, update_data }),
@@ -143,7 +286,7 @@ export const batteriesAPI = {
     search?: string
     sort_by?: string
     sort_order?: 'asc' | 'desc'
-  }) => api.get('/batteries', { params }),
+  }) => api.get<PaginationResponse<Battery>>('/batteries', { params }),
   
   getBattery: (id: string) => api.get(`/batteries/${id}`),
   
@@ -163,9 +306,11 @@ export const batteriesAPI = {
   bulkUpdateBatteries: (battery_ids: string[], update_data: any) =>
     api.patch('/batteries/bulk/update', { battery_ids, update_data }),
   
-  getBatteryStats: () => api.get('/batteries/stats/overview'),
+  getBatteryStats: () => api.get<BatteryStats>('/batteries/stats/overview'),
   
-  getBatteriesNeedingMaintenance: () => api.get('/batteries/maintenance/needed'),
+  getBatteriesNeedingMaintenance: () => api.get<PaginationResponse<Battery>>('/batteries/maintenance/needed'),
+
+  scheduleMaintenance: (batteryId: string, data: { serviceDate: string; technician: string; notes?: string }) => api.post<MaintenanceTask>(`/batteries/${batteryId}/maintenance`, data),
   
   getBatteryAnalytics: (period?: string) =>
     api.get('/batteries/analytics/performance', { params: { period } }),
@@ -281,6 +426,10 @@ export const adminAPI = {
   
   getUsageAnalytics: (period?: string) => api.get('/admin/analytics/usage', { params: { period } }),
   
+  getEnvironmentalImpact: (period?: string) => api.get<EnvironmentalImpact>('/admin/analytics/environmental', { params: { period } }),
+
+  getFinancialOverview: (period?: string) => api.get<FinancialOverview>('/admin/analytics/financial-overview', { params: { period } }),
+  
   getSystemHealth: () => api.get('/admin/health'),
   
   exportData: (type: string, params?: any) => api.get(`/admin/export/${type}`, { params, responseType: 'blob' }),
@@ -345,5 +494,26 @@ export const userProfilesAPI = {
   getPointsHistory: (userId: string, params?: { page?: number; limit?: number }) =>
     api.get(`/profiles/${userId}/points/history`, { params }),
 }
+
+export const supportAPI = {
+  getTickets: (params?: {
+    page?: number;
+    limit?: number;
+    status?: string;
+    priority?: string;
+    search?: string;
+  }) => api.get<PaginationResponse<SupportTicket>>('/support/tickets', { params }),
+
+  getTicket: (id: string) => api.get<SupportTicket>(`/support/tickets/${id}`),
+
+  createTicket: (data: { userId: string; subject: string; message: string; priority: string }) =>
+    api.post<SupportTicket>('/support/tickets', data),
+
+  replyToTicket: (id: string, message: string) =>
+    api.post<SupportTicket>(`/support/tickets/${id}/reply`, { message }),
+
+  updateTicketStatus: (id: string, status: string) =>
+    api.patch<SupportTicket>(`/support/tickets/${id}/status`, { status }),
+};
 
 export default api

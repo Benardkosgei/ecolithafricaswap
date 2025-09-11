@@ -24,13 +24,26 @@ router.get('/', async (req, res) => {
     
     const offset = (page - 1) * limit;
 
+    const selectFields = [
+      'payments.id',
+      'payments.user_id',
+      'payments.rental_id',
+      'payments.amount',
+      'payments.currency',
+      'payments.status',
+      'payments.payment_method',
+      'payments.created_at',
+      'users.full_name as user_name',
+      'users.email as user_email',
+      'battery_rentals.id as rental_id'
+    ];
+
+    if (req.user.role === 'admin') {
+      selectFields.push('payments.metadata');
+    }
+
     let query = db('payments')
-      .select(
-        'payments.*',
-        'users.full_name as user_name',
-        'users.email as user_email',
-        'battery_rentals.id as rental_id'
-      )
+      .select(selectFields)
       .leftJoin('users', 'payments.user_id', 'users.id')
       .leftJoin('battery_rentals', 'payments.rental_id', 'battery_rentals.id')
       .orderBy(`payments.${sort_by}`, sort_order);
@@ -107,15 +120,17 @@ router.get('/:id', async (req, res) => {
   try {
     const { id } = req.params;
 
+    const selectFields = [
+      'payments.*',
+      'users.full_name as user_name',
+      'users.email as user_email',
+      'users.phone as user_phone',
+      'battery_rentals.start_time as rental_start_time',
+      'battery_rentals.end_time as rental_end_time'
+    ];
+
     const payment = await db('payments')
-      .select(
-        'payments.*',
-        'users.full_name as user_name',
-        'users.email as user_email',
-        'users.phone as user_phone',
-        'battery_rentals.start_time as rental_start_time',
-        'battery_rentals.end_time as rental_end_time'
-      )
+      .select(selectFields)
       .leftJoin('users', 'payments.user_id', 'users.id')
       .leftJoin('battery_rentals', 'payments.rental_id', 'battery_rentals.id')
       .where('payments.id', id)
@@ -130,6 +145,10 @@ router.get('/:id', async (req, res) => {
       return res.status(403).json({ error: 'Access denied' });
     }
 
+    if (req.user.role !== 'admin') {
+      delete payment.metadata;
+    }
+
     res.json({ payment });
 
   } catch (error) {
@@ -139,7 +158,7 @@ router.get('/:id', async (req, res) => {
 });
 
 // Create new payment
-router.post('/', [
+router.post('/', requireOwnershipOrAdmin('user_id'),[
   body('user_id').notEmpty().withMessage('User ID is required'),
   body('amount').isFloat({ min: 0.01 }).withMessage('Amount must be a positive number'),
   body('payment_method').isIn(['mpesa', 'card', 'cash', 'points', 'bank_transfer']).withMessage('Invalid payment method')

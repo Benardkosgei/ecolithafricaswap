@@ -7,18 +7,20 @@ const rateLimit = require('express-rate-limit');
 const { createServer } = require('http');
 const { Server } = require('socket.io');
 require('express-async-errors');
-require('dotenv').config();
+const path = require('path');
+
+// Load environment variables
+const env = process.env.NODE_ENV || 'development';
+require('dotenv').config({ path: path.resolve(process.cwd(), `.env.${env}`) });
 
 const db = require('./config/database');
 const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/users');
 const stationRoutes = require('./routes/stations');
 const batteryRoutes = require('./routes/batteries');
+const wasteRoutes = require('./routes/waste'); // Added waste routes
 const adminRoutes = require('./routes/admin');
-
-
 const errorHandler = require('./middleware/errorHandler');
-
 
 const app = express();
 const server = createServer(app);
@@ -30,7 +32,7 @@ const io = new Server(server, {
 });
 
 // Port configuration
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.API_PORT || 5000;
 
 // Rate limiting
 const limiter = rateLimit({
@@ -42,7 +44,7 @@ const limiter = rateLimit({
 // Middleware
 app.use(helmet());
 app.use(cors({
-  origin: process.env.FRONTEND_URL || "*",
+  origin: ["http://localhost:3000", "http://localhost:3001", "http://localhost:8081"], // Allow multiple origins
   credentials: true
 }));
 app.use(compression());
@@ -50,6 +52,7 @@ app.use(morgan('combined'));
 app.use(limiter);
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use('/uploads', express.static(path.join(__dirname, 'uploads'))); // Serve uploaded files
 
 // Health check endpoint
 app.get('/health', (req, res) => {
@@ -66,19 +69,18 @@ app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/stations', stationRoutes);
 app.use('/api/batteries', batteryRoutes);
+app.use('/api/waste', wasteRoutes);
 app.use('/api/admin', adminRoutes);
 
 // WebSocket connection handling
 io.on('connection', (socket) => {
   console.log('User connected:', socket.id);
 
-  // Join admin room for real-time updates
   socket.on('join-admin', () => {
     socket.join('admin-room');
     console.log('Admin joined real-time updates');
   });
 
-  // Join station room for real-time updates
   socket.on('join-station', (stationId) => {
     socket.join(`station-${stationId}`);
     console.log(`User joined station ${stationId} updates`);
@@ -89,7 +91,6 @@ io.on('connection', (socket) => {
   });
 });
 
-// Make io available in routes
 app.set('io', io);
 
 // Error handling middleware
@@ -103,17 +104,13 @@ app.use('*', (req, res) => {
   });
 });
 
-// Database connection and server startup
 async function startServer() {
   try {
-    // Test database connection
     await db.raw('SELECT 1');
-    console.log('✅ Database connected successfully');
 
-    // Start server
     server.listen(PORT, () => {
       console.log(`🚀 EcolithSwap API Server running on port ${PORT}`);
-      console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
+      console.log(`📊 Environment: ${env}`);
       console.log(`🔗 Health check: http://localhost:${PORT}/health`);
     });
   } catch (error) {

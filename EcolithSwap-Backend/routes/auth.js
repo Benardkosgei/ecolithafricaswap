@@ -81,7 +81,7 @@ router.post('/register', [
       // Generate JWT token
       const token = jwt.sign(
         { userId, email, role: 'customer' },
-        process.env.JWT_SECRET || 'ecolithswap_secret_key',
+        process.env.JWT_SECRET,
         { expiresIn: '24h' }
       );
 
@@ -149,14 +149,14 @@ router.post('/login', [
     // Generate JWT token
     const token = jwt.sign(
       { userId: user.id, email: user.email, role: user.role },
-      process.env.JWT_SECRET || 'ecolithswap_secret_key',
+      process.env.JWT_SECRET,
       { expiresIn: '24h' }
     );
 
     // Generate refresh token
     const refreshToken = jwt.sign(
       { userId: user.id, email: user.email, type: 'refresh' },
-      process.env.JWT_REFRESH_SECRET || 'ecolithswap_refresh_secret',
+      process.env.JWT_REFRESH_SECRET,
       { expiresIn: '30d' }
     );
 
@@ -195,7 +195,7 @@ router.post('/refresh', async (req, res) => {
     // Verify refresh token
     const decoded = jwt.verify(
       refreshToken,
-      process.env.JWT_REFRESH_SECRET || 'ecolithswap_refresh_secret'
+      process.env.JWT_REFRESH_SECRET
     );
 
     if (decoded.type !== 'refresh') {
@@ -211,7 +211,7 @@ router.post('/refresh', async (req, res) => {
     // Generate new access token
     const newToken = jwt.sign(
       { userId: user.id, email: user.email, role: user.role },
-      process.env.JWT_SECRET || 'ecolithswap_secret_key',
+      process.env.JWT_SECRET,
       { expiresIn: '24h' }
     );
 

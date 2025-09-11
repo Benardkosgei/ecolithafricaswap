@@ -1,4 +1,5 @@
 import React from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card'
 import { Button } from '../../components/ui/button'
 import {
@@ -28,36 +29,31 @@ import {
   ResponsiveContainer,
   Legend,
 } from 'recharts'
-
-// Sample data
-const revenueData = [
-  { month: 'Jan', revenue: 45890, transactions: 1245, avgTransaction: 36.85 },
-  { month: 'Feb', revenue: 52340, transactions: 1456, avgTransaction: 35.94 },
-  { month: 'Mar', revenue: 48920, transactions: 1367, avgTransaction: 35.79 },
-  { month: 'Apr', revenue: 61250, transactions: 1698, avgTransaction: 36.07 },
-  { month: 'May', revenue: 58730, transactions: 1623, avgTransaction: 36.18 },
-  { month: 'Jun', revenue: 67890, transactions: 1834, avgTransaction: 37.02 },
-  { month: 'Jul', revenue: 71450, transactions: 1923, avgTransaction: 37.15 },
-]
-
-const paymentMethodData = [
-  { name: 'M-Pesa', value: 45, color: '#2E7D32' },
-  { name: 'Credit Card', value: 35, color: '#00796B' },
-  { name: 'Debit Card', value: 15, color: '#FFC107' },
-  { name: 'Cash', value: 5, color: '#D32F2F' },
-]
-
-const dailyRevenueData = [
-  { day: 'Mon', revenue: 8450, swaps: 234 },
-  { day: 'Tue', revenue: 9230, swaps: 267 },
-  { day: 'Wed', revenue: 7890, swaps: 213 },
-  { day: 'Thu', revenue: 10340, swaps: 289 },
-  { day: 'Fri', revenue: 11250, swaps: 312 },
-  { day: 'Sat', revenue: 12890, swaps: 356 },
-  { day: 'Sun', revenue: 9870, swaps: 278 },
-]
+import { adminAPI, FinancialOverview } from '../../lib/api'
 
 export function FinancialOverviewPage() {
+  const { data, isLoading, isError } = useQuery<FinancialOverview>({
+    queryKey: ['financialOverview'],
+    queryFn: async () => {
+      const response = await adminAPI.getFinancialOverview('last_30_days')
+      return response.data
+    },
+  })
+
+  if (isLoading) {
+    return <div>Loading financial data...</div>
+  }
+
+  if (isError || !data) {
+    return (
+      <div className="text-red-500">
+        Error loading financial data. Please try again later.
+      </div>
+    )
+  }
+
+  const { totalRevenue, transactions, avgTransaction, monthlyGrowth, revenueData, paymentMethodData, dailyRevenueData } = data
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -92,10 +88,10 @@ export function FinancialOverviewPage() {
               <DollarSign className="h-8 w-8 text-[#2E7D32]" />
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Total Revenue</p>
-                <p className="text-2xl font-bold">{formatCurrency(245890)}</p>
+                <p className="text-2xl font-bold">{formatCurrency(totalRevenue.value)}</p>
                 <div className="flex items-center mt-1">
                   <TrendingUp className="h-3 w-3 text-green-500 mr-1" />
-                  <span className="text-xs text-green-600">+15.3% from last month</span>
+                  <span className="text-xs text-green-600">+{totalRevenue.change.toFixed(1)}% from last month</span>
                 </div>
               </div>
             </div>
@@ -108,10 +104,10 @@ export function FinancialOverviewPage() {
               <CreditCard className="h-8 w-8 text-[#2E7D32]" />
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Transactions</p>
-                <p className="text-2xl font-bold">{formatNumber(8547)}</p>
+                <p className="text-2xl font-bold">{formatNumber(transactions.value)}</p>
                 <div className="flex items-center mt-1">
                   <TrendingUp className="h-3 w-3 text-green-500 mr-1" />
-                  <span className="text-xs text-green-600">+8.7% from last month</span>
+                  <span className="text-xs text-green-600">+{transactions.change.toFixed(1)}% from last month</span>
                 </div>
               </div>
             </div>
@@ -124,10 +120,10 @@ export function FinancialOverviewPage() {
               <Banknote className="h-8 w-8 text-[#2E7D32]" />
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Avg. Transaction</p>
-                <p className="text-2xl font-bold">{formatCurrency(36.87)}</p>
+                <p className="text-2xl font-bold">{formatCurrency(avgTransaction.value)}</p>
                 <div className="flex items-center mt-1">
                   <TrendingUp className="h-3 w-3 text-green-500 mr-1" />
-                  <span className="text-xs text-green-600">+2.1% from last month</span>
+                  <span className="text-xs text-green-600">+{avgTransaction.change.toFixed(1)}% from last month</span>
                 </div>
               </div>
             </div>
@@ -140,10 +136,10 @@ export function FinancialOverviewPage() {
               <DollarSign className="h-8 w-8 text-[#2E7D32]" />
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Monthly Growth</p>
-                <p className="text-2xl font-bold">15.3%</p>
+                <p className="text-2xl font-bold">{monthlyGrowth.value.toFixed(1)}%</p>
                 <div className="flex items-center mt-1">
                   <TrendingUp className="h-3 w-3 text-green-500 mr-1" />
-                  <span className="text-xs text-green-600">vs 12.8% last month</span>
+                  <span className="text-xs text-green-600">vs {monthlyGrowth.vsLastMonth.toFixed(1)}% last month</span>
                 </div>
               </div>
             </div>

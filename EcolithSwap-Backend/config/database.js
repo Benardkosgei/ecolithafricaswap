@@ -1,16 +1,18 @@
 const knex = require('knex');
-require('dotenv').config();
+const path = require('path');
+
+// Load environment variables based on NODE_ENV
+const env = process.env.NODE_ENV || 'development';
+require('dotenv').config({ path: path.resolve(process.cwd(), `.env.${env}`) });
 
 const dbConfig = {
-  client: process.env.DB_CLIENT || 'sqlite3',
-  connection: process.env.DB_CLIENT === 'sqlite3' ? {
-    filename: process.env.DB_FILENAME || './ecolithswap.db'
-  } : {
-    host: process.env.DB_HOST || 'localhost',
+  client: process.env.DB_CLIENT || 'mysql',
+  connection: {
+    host: process.env.DB_HOST,
     port: process.env.DB_PORT || 3306,
-    user: process.env.DB_USER || 'root',
-    password: process.env.DB_PASSWORD || '',
-    database: process.env.DB_NAME || 'ecolithswap',
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME,
     charset: 'utf8mb4',
     timezone: 'UTC'
   },
@@ -26,25 +28,24 @@ const dbConfig = {
     createRetryIntervalMillis: 100
   },
   migrations: {
-    directory: './migrations',
+    directory: '../migrations',
     tableName: 'knex_migrations'
   },
   seeds: {
-    directory: './seeds'
+    directory: '../seeds'
   },
   acquireConnectionTimeout: 60000,
-  debug: process.env.NODE_ENV === 'development'
+  debug: env === 'development'
 };
 
 const db = knex(dbConfig);
 
-// Test connection on startup
 db.raw('SELECT 1')
   .then(() => {
-    console.log('✅ MySQL database connection established');
+    console.log(`✅ Database connection established for ${env} environment`);
   })
   .catch((err) => {
-    console.error('❌ MySQL database connection failed:', err.message);
+    console.error(`❌ Database connection failed for ${env} environment:`, err.message);
   });
 
 module.exports = db;
