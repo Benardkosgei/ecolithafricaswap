@@ -10,7 +10,7 @@ exports.up = function(knex) {
     table.decimal('amount', 10, 2).notNullable();
     table.string('currency', 3).defaultTo('KES');
     table.enum('payment_method', ['mpesa', 'card', 'cash', 'points', 'bank_transfer']).notNullable();
-    table.string('payment_reference').unique();
+    table.string('payment_reference', 191).unique();
     table.string('mpesa_receipt_number');
     table.string('transaction_id');
     table.enum('status', ['pending', 'completed', 'failed', 'cancelled', 'refunded']).defaultTo('pending');
@@ -25,7 +25,6 @@ exports.up = function(knex) {
     table.index(['rental_id']);
     table.index(['status']);
     table.index(['payment_method']);
-    table.index(['payment_reference']);
   });
 };
 

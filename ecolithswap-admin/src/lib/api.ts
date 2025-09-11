@@ -516,4 +516,55 @@ export const supportAPI = {
     api.patch<SupportTicket>(`/support/tickets/${id}/status`, { status }),
 };
 
+// Analytics API
+export const analyticsAPI = {
+  getUsageAnalytics: (period?: string) =>
+    api.get('/analytics/usage', { params: { period } }),
+  
+  getUserAnalytics: (period?: string) =>
+    api.get('/analytics/user', { params: { period } }),
+
+  getGeographicAnalysis: (period?: string) =>
+    api.get('/analytics/geographic', { params: { period } }),
+};
+
+// Environmental API
+export const environmentalAPI = {
+  getEnvironmentalImpact: (period?: string) =>
+    api.get<EnvironmentalImpact>('/environmental/impact', { params: { period } }),
+
+  getLeaderboard: (params?: PaginationParams) =>
+    api.get('/environmental/leaderboard', { params }),
+
+  getWasteSubmissions: (params?: PaginationParams) =>
+    api.get('/environmental/waste-submissions', { params }),
+};
+
+// Settings API
+export const settingsAPI = {
+  getApiKeys: (params?: PaginationParams) =>
+    api.get('/settings/api-keys', { params }),
+  
+  createApiKey: (data: { name: string; expires_in_days: number }) =>
+    api.post('/settings/api-keys', data),
+
+  deleteApiKey: (id: string) =>
+    api.delete(`/settings/api-keys/${id}`),
+
+  getAuditLogs: (params?: PaginationParams & { user_id?: string; action?: string }) =>
+    api.get('/settings/audit-logs', { params }),
+
+  getBillingHistory: (params?: PaginationParams) =>
+    api.get('/settings/billing-history', { params }),
+  
+  updateSubscription: (data: { plan_id: string }) =>
+    api.post('/settings/subscription', data),
+
+  getSystemSettings: () =>
+    api.get('/settings/system'),
+  
+  updateSystemSettings: (data: any) =>
+    api.patch('/settings/system', data),
+};
+
 export default api

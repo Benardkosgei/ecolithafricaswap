@@ -12,7 +12,7 @@ exports.up = function(knex) {
     table.decimal('co2_saved_kg', 8, 3);
     table.enum('plastic_type', ['PET', 'HDPE', 'PVC', 'LDPE', 'PP', 'PS', 'OTHER']).defaultTo('OTHER');
     table.text('description');
-    table.string('receipt_number').unique();
+    table.string('receipt_number', 191).unique();
     table.boolean('verified').defaultTo(false);
     table.uuid('verified_by').references('id').inTable('users');
     table.timestamp('verified_at');

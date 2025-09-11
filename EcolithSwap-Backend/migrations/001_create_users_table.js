@@ -5,10 +5,10 @@
 exports.up = function(knex) {
   return knex.schema.createTable('users', function(table) {
     table.increments('id').primary();
-    table.string('email').unique().notNullable();
+    table.string('email', 191).unique().notNullable();
     table.string('password_hash').notNullable();
     table.string('full_name').notNullable();
-    table.string('phone').unique();
+    table.string('phone', 50).unique();
     table.string('location');
     table.enum('role', ['customer', 'admin', 'station_manager']).defaultTo('customer');
     table.boolean('is_active').defaultTo(true);
@@ -19,8 +19,6 @@ exports.up = function(knex) {
     table.timestamps(true, true);
     
     // Indexes
-    table.index(['email']);
-    table.index(['phone']);
     table.index(['role']);
     table.index(['is_active']);
   });
