@@ -5,8 +5,8 @@
 exports.up = function(knex) {
   return knex.schema.createTable('batteries', function(table) {
     table.uuid('id').primary().defaultTo(knex.raw('(UUID())'));
-    table.string('battery_code').unique().notNullable();
-    table.string('serial_number').unique().notNullable();
+    table.string('battery_code', 191).unique().notNullable();
+    table.string('serial_number', 191).unique().notNullable();
     table.string('model').notNullable();
     table.string('manufacturer');
     table.decimal('capacity_kwh', 8, 2).notNullable();
