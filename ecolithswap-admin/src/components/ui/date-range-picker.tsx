@@ -1,6 +1,6 @@
 import * as React from "react"
 import { CalendarIcon } from "@radix-ui/react-icons"
-import { addDays, format } from "date-fns"
+import { format } from "date-fns"
 import { DateRange } from "react-day-picker"
 
 import { cn } from "../../lib/utils"
@@ -13,14 +13,14 @@ import {
 } from "./popover"
 
 interface DateRangePickerProps extends React.HTMLAttributes<HTMLDivElement> {
-  dateRange?: DateRange;
-  onDateChange: (dateRange: DateRange | undefined) => void;
+  value?: DateRange;
+  onChange: (dateRange: DateRange | undefined) => void;
 }
 
-export function DateRangePicker({ className, dateRange, onDateChange }: DateRangePickerProps) {
+export function DateRangePicker({ className, value, onChange }: DateRangePickerProps) {
 
   const handleSelect = (range: DateRange | undefined) => {
-    onDateChange(range);
+    onChange(range);
   }
 
   return (
@@ -32,19 +32,19 @@ export function DateRangePicker({ className, dateRange, onDateChange }: DateRang
             variant={"outline"}
             className={cn(
               "w-[300px] justify-start text-left font-normal",
-              !dateRange && "text-muted-foreground"
+              !value && "text-muted-foreground"
             )}
           >
             <CalendarIcon className="mr-2 h-4 w-4" />
             {
-              dateRange?.from ? (
-                dateRange.to ? (
+              value?.from ? (
+                value.to ? (
                   <>
-                    {format(dateRange.from, "LLL dd, y")} -{" "}
-                    {format(dateRange.to, "LLL dd, y")}
+                    {format(value.from, "LLL dd, y")} -{" "}
+                    {format(value.to, "LLL dd, y")}
                   </>
                 ) : (
-                  format(dateRange.from, "LLL dd, y")
+                  format(value.from, "LLL dd, y")
                 )
               ) : (
                 <span>Pick a date</span>
@@ -56,8 +56,8 @@ export function DateRangePicker({ className, dateRange, onDateChange }: DateRang
           <Calendar
             initialFocus
             mode="range"
-            defaultMonth={dateRange?.from}
-            selected={dateRange}
+            defaultMonth={value?.from}
+            selected={value}
             onSelect={handleSelect}
             numberOfMonths={2}
           />
