@@ -4,7 +4,7 @@ import { analyticsAPI } from '../../lib/api';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../components/ui/card';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
-import HeatmapLayer from 'react-leaflet-heatmap-layer';
+import HeatmapLayer from 'react-leaflet-heatmap-layer-v3';
 import { DateRangePicker } from '../../components/ui/date-range-picker';
 import { Button } from '../../components/ui/button';
 import { Download } from 'lucide-react';
