@@ -5,6 +5,18 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL || 'YOUR_SUPABASE_URL';
 const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || 'YOUR_SUPABASE_ANON_KEY';
 
+export const initializeSupabase = async () => {
+  if (supabaseUrl === 'YOUR_SUPABASE_URL' || supabaseAnonKey === 'YOUR_SUPABASE_ANON_KEY') {
+    throw new Error('Supabase URL or anonymous key is not set. Please check your .env file.');
+  }
+  try {
+    // Initialize database tables if needed
+    console.log('Supabase initialized successfully');
+  } catch (error) {
+    console.error('Error initializing Supabase:', error);
+  }
+};
+
 // Create Supabase client with AsyncStorage for session persistence
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
@@ -14,15 +26,6 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     detectSessionInUrl: false,
   },
 });
-
-export const initializeSupabase = async () => {
-  try {
-    // Initialize database tables if needed
-    console.log('Supabase initialized successfully');
-  } catch (error) {
-    console.error('Error initializing Supabase:', error);
-  }
-};
 
 // Database table schemas for reference:
 /*
@@ -37,7 +40,7 @@ export const initializeSupabase = async () => {
     plastic_recycled DECIMAL DEFAULT 0,
     co2_saved DECIMAL DEFAULT 0,
     money_saved DECIMAL DEFAULT 0,
-    current_points INTEGER DEFAULT 0,
+    current_points INTEGER DEFAULT .env,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
   );

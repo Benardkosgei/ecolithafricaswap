@@ -6,7 +6,6 @@ import {
   ScrollView,
   TouchableOpacity,
   RefreshControl,
-  Alert,
   Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -49,7 +48,6 @@ const HomeScreen = ({ navigation }) => {
       ]);
     } catch (error) {
       console.error('Error loading initial data:', error);
-      Alert.alert('Error', 'Failed to load data. Please try again.');
     }
   };
 
@@ -87,20 +85,17 @@ const HomeScreen = ({ navigation }) => {
   const handleQuickAction = (action) => {
     switch (action) {
       case 'findStation':
-        navigation.navigate('StationFinder');
+        navigation.navigate('StationsTab', { screen: 'StationList' });
         break;
       case 'swapBattery':
         if (currentRental) {
-          navigation.navigate('SwapCharge');
+          navigation.navigate('RentalsTab');
         } else {
-          navigation.navigate('StationFinder');
+          navigation.navigate('StationsTab', { screen: 'StationList' });
         }
         break;
       case 'submitWaste':
-        navigation.navigate('PlasticWaste');
-        break;
-      case 'viewHistory':
-        navigation.navigate('History');
+        navigation.navigate('RecycleTab');
         break;
       default:
         break;
@@ -111,7 +106,7 @@ const HomeScreen = ({ navigation }) => {
     <View style={styles.header}>
       <View style={styles.logoContainer}>
         <Image
-          source={require('../../../user_input_files/Ecolith Logo.png')}
+          source={require('../../assets/icon.png')}
           style={styles.logo}
           resizeMode="contain"
         />
@@ -122,7 +117,7 @@ const HomeScreen = ({ navigation }) => {
       </View>
       <TouchableOpacity
         style={styles.profileButton}
-        onPress={() => navigation.navigate('Profile')}
+        onPress={() => navigation.navigate('ProfileTab')}
       >
         <Ionicons name="person-circle-outline" size={32} color={theme.colors.primary} />
       </TouchableOpacity>
@@ -165,18 +160,18 @@ const HomeScreen = ({ navigation }) => {
         <Text style={styles.sectionTitle}>Current Rental</Text>
         <TouchableOpacity
           style={styles.rentalCard}
-          onPress={() => navigation.navigate('SwapCharge')}
+          onPress={() => navigation.navigate('RentalsTab')}
         >
           <View style={styles.rentalInfo}>
             <View style={styles.rentalHeader}>
               <Ionicons name="battery-charging" size={20} color={theme.colors.primary} />
-              <Text style={styles.rentalTitle}>Battery #{currentRental.battery_serial}</Text>
+              <Text style={styles.rentalTitle}>Battery #{currentRental.battery_id}</Text>
             </View>
             <Text style={styles.rentalStation}>
-              From: {currentRental.pickup_station_name}
+              From: {stations.find(s => s.id === currentRental.station_id)?.name || 'Unknown Station'}
             </Text>
             <Text style={styles.rentalTime}>
-              Started: {new Date(currentRental.rental_date).toLocaleString()}
+              Started: {new Date(currentRental.start_time).toLocaleString()}
             </Text>
           </View>
           <View style={styles.rentalStatus}>
@@ -224,17 +219,6 @@ const HomeScreen = ({ navigation }) => {
           <Text style={styles.actionTitle}>Recycle Plastic</Text>
           <Text style={styles.actionSubtitle}>Earn credits for plastic waste</Text>
         </TouchableOpacity>
-        
-        <TouchableOpacity
-          style={styles.actionCard}
-          onPress={() => handleQuickAction('viewHistory')}
-        >
-          <View style={[styles.actionIcon, { backgroundColor: theme.colors.warning + '20' }]}>
-            <Ionicons name="time" size={24} color={theme.colors.warning} />
-          </View>
-          <Text style={styles.actionTitle}>View History</Text>
-          <Text style={styles.actionSubtitle}>Check past transactions</Text>
-        </TouchableOpacity>
       </View>
     </View>
   );
@@ -246,7 +230,7 @@ const HomeScreen = ({ navigation }) => {
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Nearby Stations</Text>
-          <TouchableOpacity onPress={() => navigation.navigate('StationFinder')}>
+          <TouchableOpacity onPress={() => navigation.navigate('StationsTab', { screen: 'StationList' })}>
             <Text style={styles.seeAllText}>See All</Text>
           </TouchableOpacity>
         </View>
@@ -256,12 +240,12 @@ const HomeScreen = ({ navigation }) => {
             key={station.id}
             style={styles.stationCard}
             onPress={() => {
-              navigation.navigate('StationDetail', { station });
+              navigation.navigate('StationsTab', { screen: 'StationDetail', params: { station }});
             }}
           >
             <View style={styles.stationInfo}>
               <Text style={styles.stationName}>{station.name}</Text>
-              <Text style={styles.stationLocation}>{station.location}</Text>
+              <Text style={styles.stationLocation}>{station.address}</Text>
               <View style={styles.stationMeta}>
                 <Ionicons name="location" size={14} color={theme.colors.gray} />
                 <Text style={styles.stationDistance}>

@@ -287,9 +287,11 @@ export const databaseService = {
   // Database maintenance
   async getDbSize() {
     try {
-      const [results] = await db.executeSql("PRAGMA page_count");
-      const pageCount = results.rows.item(0).page_count;
-      return pageCount * 1024; // Approximate size in bytes
+      const [pageCountResult] = await db.executeSql("PRAGMA page_count");
+      const pageCount = pageCountResult.rows.item(0).page_count;
+      const [pageSizeResult] = await db.executeSql("PRAGMA page_size");
+      const pageSize = pageSizeResult.rows.item(0).page_size;
+      return pageCount * pageSize; // Accurate size in bytes
     } catch (error) {
       console.error('Error getting database size:', error);
       return 0;
