@@ -1,10 +1,11 @@
+
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { analyticsAPI } from '../../lib/api';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../components/ui/card';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
-import HeatmapLayer from 'react-leaflet-heatmap-layer';
+import HeatmapLayer from '../../components/ui/heatmap-layer';
 import { DateRangePicker } from '../../components/ui/date-range-picker';
 import { DateRange } from 'react-day-picker';
 import { subDays } from 'date-fns';
@@ -54,12 +55,7 @@ export function GeographicAnalysisPage() {
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             />
             {data?.heatmapData && (
-              <HeatmapLayer
-                points={data.heatmapData}
-                longitudeExtractor={(m: any) => m[1]}
-                latitudeExtractor={(m: any) => m[0]}
-                intensityExtractor={(m: any) => parseFloat(m[2])}
-              />
+              <HeatmapLayer points={data.heatmapData} />
             )}
             {data?.stationMarkers.map((station: any) => (
               <Marker key={station.id} position={[station.lat, station.lng]}>
