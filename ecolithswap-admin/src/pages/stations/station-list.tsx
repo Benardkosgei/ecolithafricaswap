@@ -190,7 +190,7 @@ export function StationListPage() {
                 </DropdownMenu>
             );
         }
-    }\], [queryClient]);
+    }], [queryClient]);
 
   const table = useReactTable({
     data: stations || [],
