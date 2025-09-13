@@ -14,13 +14,15 @@ import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 
-// Fix for default icon issue with webpack
-delete (L.Icon.Default.prototype as any)._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: require('leaflet/dist/images/marker-icon-2x.png'),
-  iconUrl: require('leaflet/dist/images/marker-icon.png'),
-  shadowUrl: require('leaflet/dist/images/marker-shadow.png'),
-});
+const defaultIcon = L.icon({
+    iconRetinaUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon-2x.png',
+    iconUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png',
+    shadowUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png',
+    iconSize: [25, 41],
+    iconAnchor: [12, 41],
+    popupAnchor: [1, -34],
+    shadowSize: [41, 41]
+  });
 
 interface StationDetailsProps {
   stationId: string;
@@ -65,7 +67,7 @@ export function StationDetails({ stationId, isOpen, onClose }: StationDetailsPro
                   url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                   attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                 />
-                <Marker position={position}>
+                <Marker position={position} icon={defaultIcon}>
                   <Popup>{station.name}</Popup>
                 </Marker>
               </MapContainer>
@@ -134,7 +136,7 @@ export function StationDetails({ stationId, isOpen, onClose }: StationDetailsPro
                     <TableCell colSpan={4} className="text-center">No recent rentals from this station.</TableCell>
                   </TableRow>
                 )}
-              </TableBody>
+              </Body>
             </Table>
           </CardContent>
         </Card>
