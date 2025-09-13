@@ -29,8 +29,8 @@ router.get('/dashboard', requireAdminOrManager, async (req, res) => {
       db('battery_rentals').where('status', 'completed').sum('total_cost as total').first(),
       
       // Waste
-      db('plastic_waste_logs').where('status', 'verified').sum('verified_weight_kg as total').first(),
-      db('plastic_waste_logs').where('status', 'pending_verification').count('id as count').first(),
+      db('waste_logs').where('status', 'verified').sum('verified_weight_kg as total').first(),
+      db('waste_logs').where('status', 'pending_verification').count('id as count').first(),
       
       // Payments
       db('payments').where('status', 'completed').sum('amount as total').first(),
@@ -99,17 +99,17 @@ router.get('/activities', requireAdminOrManager, async (req, res) => {
       .limit(5);
 
     // Get recent waste submissions
-    const recentWaste = await db('plastic_waste_logs')
+    const recentWaste = await db('waste_logs')
       .select(
-        'plastic_waste_logs.id',
-        'plastic_waste_logs.waste_type',
-        'plastic_waste_logs.weight_kg',
-        'plastic_waste_logs.status',
-        'plastic_waste_logs.created_at',
+        'waste_logs.id',
+        'waste_logs.waste_type',
+        'waste_logs.weight_kg',
+        'waste_logs.status',
+        'waste_logs.created_at',
         'users.full_name as user_name'
       )
-      .leftJoin('users', 'plastic_waste_logs.user_id', 'users.id')
-      .orderBy('plastic_waste_logs.created_at', 'desc')
+      .leftJoin('users', 'waste_logs.user_id', 'users.id')
+      .orderBy('waste_logs.created_at', 'desc')
       .limit(5);
 
     // Get recent payments
@@ -294,7 +294,7 @@ router.get('/health', requireAdminOrManager, async (req, res) => {
     }
 
     // Check for pending waste verifications
-    const pendingWaste = await db('plastic_waste_logs')
+    const pendingWaste = await db('waste_logs')
       .where('status', 'pending_verification')
       .count('id as count')
       .first();
