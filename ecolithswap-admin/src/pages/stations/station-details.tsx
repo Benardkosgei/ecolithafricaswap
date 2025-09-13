@@ -42,6 +42,8 @@ export function StationDetails({ stationId, isOpen, onClose }: StationDetailsPro
     if (error) return <div>Error loading station details.</div>;
     if (!station) return <div>Station not found.</div>;
 
+    console.log(station);
+
     return (
       <div className="space-y-6 mt-4">
         <div className="grid md:grid-cols-3 gap-6">
