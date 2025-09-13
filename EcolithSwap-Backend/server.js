@@ -11,7 +11,9 @@ const path = require('path');
 
 // Load environment variables
 const env = process.env.NODE_ENV || 'development';
-require('dotenv').config({ path: path.resolve(process.cwd(), `.env.${env}`) });
+const dotenv = require('dotenv');
+dotenv.config({ path: path.resolve(process.cwd(), '.env') });
+dotenv.config({ path: path.resolve(process.cwd(), `.env.${env}`), override: true });
 
 const db = require('./config/database');
 const authRoutes = require('./routes/auth');
@@ -45,7 +47,7 @@ const limiter = rateLimit({
 // Middleware
 app.use(helmet());
 app.use(cors({
-  origin: ["http://localhost:3000", "http://localhost:3001", "http://localhost:8081"], // Allow multiple origins
+  origin: ["http://localhost:3000", "http://localhost:5173","http://localhost:3001", "http://localhost:8081"], // Allow multiple origins
   credentials: true
 }));
 app.use(compression());
