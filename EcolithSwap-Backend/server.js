@@ -16,6 +16,7 @@ dotenv.config({ path: path.resolve(process.cwd(), '.env') });
 dotenv.config({ path: path.resolve(process.cwd(), `.env.${env}`), override: true });
 
 const db = require('./config/database');
+const { authenticateToken } = require('./middleware/auth');
 const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/users');
 const stationRoutes = require('./routes/stations');
@@ -70,6 +71,7 @@ app.get('/health', (req, res) => {
 
 // API Routes
 app.use('/api/auth', authRoutes);
+app.use('/api', authenticateToken); // Authenticate all routes below this line
 app.use('/api/users', userRoutes);
 app.use('/api/stations', stationRoutes);
 app.use('/api/batteries', batteryRoutes);
