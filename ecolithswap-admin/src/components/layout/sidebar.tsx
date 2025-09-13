@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Battery, ChargingStation, Users, DollarSign, Recycle, BarChart3, Settings, ChevronDown, ChevronRight } from 'lucide-react';
+import { Home, Battery, Fuel, Users, DollarSign, Recycle, BarChart3, Settings, ChevronDown, ChevronRight } from 'lucide-react';
 
 const navigation = [
   {
@@ -19,7 +19,7 @@ const navigation = [
   },
   {
     name: 'Station Management',
-    icon: ChargingStation,
+    icon: Fuel,
     children: [
       { name: 'Station List', href: '/stations' },
       { name: 'Add Station', href: '/stations/add' },
