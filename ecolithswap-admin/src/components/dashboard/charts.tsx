@@ -130,9 +130,14 @@ export function StationPerformanceChart() {
   const { data, isLoading, isError } = useQuery<StationPerformance[]>(
     {
       queryKey: ['stationPerformance'],
-      queryFn: async () => {
-        const response = await stationsAPI.getStationStats();
-        return response.data;
+       queryFn: async () => {
+        const response = await stationsAPI.getStationStatsOverview();
+        const stats = response.data;
+        return [
+          { station: 'Total', swaps: stats.totalStations, efficiency: 100 },
+          { station: 'Active', swaps: stats.activeStations, efficiency: 0 },
+          { station: 'Maintenance', swaps: stats.maintenanceStations, efficiency: 0 },
+        ];
       }
     }
   );
@@ -153,7 +158,7 @@ export function StationPerformanceChart() {
             <YAxis yAxisId="left" tick={{ fontSize: 12 }} />
             <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 12 }} />
             <Tooltip />
-            <Bar yAxisId="left" dataKey="swaps" fill="#2E7D32" name="Daily Swaps" />
+            <Bar yAxisId="left" dataKey="swaps" fill="#2E7D32" name="Count" />
             <Bar yAxisId="right" dataKey="efficiency" fill="#00796B" name="Efficiency %" />
           </BarChart>
         </ResponsiveContainer>

@@ -279,23 +279,27 @@ router.delete('/:id', requireAdmin, async (req, res) => {
 // Get battery statistics
 router.get('/stats/overview', requireAdminOrManager, async (req, res) => {
   try {
-    const stats = await Promise.all([
-      db('batteries').count('id as count').first(),
-      db('batteries').where('status', 'available').count('id as count').first(),
-      db('batteries').where('status', 'rented').count('id as count').first(),
-      db('batteries').where('status', 'charging').count('id as count').first(),
-      db('batteries').where('status', 'maintenance').count('id as count').first(),
-      db('batteries').where('health_status', 'poor').count('id as count').first()
-    ]);
+    const stats = await db('batteries')
+      .select('status')
+      .count('id as count')
+      .groupBy('status');
 
-    res.json({
-      totalBatteries: stats[0].count,
-      available: stats[1].count,
-      rented: stats[2].count,
-      charging: stats[3].count,
-      maintenance: stats[4].count,
-      needMaintenance: stats[5].count
+    const formattedStats = stats.map(stat => {
+        let color = '#000000'; // Default color
+        switch(stat.status) {
+            case 'available': color = '#4CAF50'; break;
+            case 'rented': color = '#FFC107'; break;
+            case 'charging': color = '#2196F3'; break;
+            case 'maintenance': color = '#f44336'; break;
+        }
+        return {
+            name: stat.status.charAt(0).toUpperCase() + stat.status.slice(1),
+            value: stat.count,
+            color: color
+        };
     });
+
+    res.json(formattedStats);
 
   } catch (error) {
     console.error('Get battery stats error:', error);

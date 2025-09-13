@@ -269,7 +269,7 @@ export const stationsAPI = {
   bulkUpdateStations: (station_ids: string[], update_data: any) =>
     api.patch('/stations/bulk/update', { station_ids, update_data }),
   
-  getStationStats: () => api.get('/stations/stats'),
+  getStationStatsOverview: () => api.get('/stations/stats/overview'),
   
   getNearbyStations: (latitude: number, longitude: number, radius?: number) =>
     api.get(`/stations/nearby/${latitude}/${longitude}`, { params: { radius } }),
