@@ -166,7 +166,7 @@ async function seedDatabase() {
     console.log('🔋 Seeding batteries...');
     const batteriesWithStations = sampleBatteries.map((battery, index) => ({
       ...battery,
-      station_id: insertedStations[index % insertedStations.length].id // Distribute batteries across stations
+      current_station_id: insertedStations[index % insertedStations.length].id // Distribute batteries across stations
     }));
     await trx('batteries').insert(batteriesWithStations);
     
