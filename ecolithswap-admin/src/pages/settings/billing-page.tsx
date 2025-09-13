@@ -16,8 +16,8 @@ interface Invoice {
 
 export function BillingPage() {
     const { data: billingInfo, isLoading } = useQuery({
-        queryKey: ['billing'],
-        queryFn: () => settingsAPI.getBillingInfo().then(res => res.data),
+        queryKey: ['billingHistory'],
+        queryFn: () => settingsAPI.getBillingHistory().then(res => res.data),
     });
 
     const invoiceColumns: ColumnDef<Invoice>[] = [

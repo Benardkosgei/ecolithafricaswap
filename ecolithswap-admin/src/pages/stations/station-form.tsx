@@ -26,9 +26,9 @@ import { Station } from '../../types'
 import toast from 'react-hot-toast'
 
 interface StationFormProps {
-  station?: Station
-  onClose: () => void
-  onSuccess: () => void
+  isOpen: boolean;
+  onClose: () => void;
+  station?: Station | null;
 }
 
 interface FormData {
@@ -50,7 +50,7 @@ interface FormErrors {
   [key: string]: string
 }
 
-export function StationForm({ station, onClose, onSuccess }: StationFormProps) {
+export function StationForm({ isOpen, onClose, station }: StationFormProps) {
   const [formData, setFormData] = useState<FormData>({
     name: '',
     address: '',
@@ -95,8 +95,25 @@ export function StationForm({ station, onClose, onSuccess }: StationFormProps) {
       if (station.image_url) {
         setImagePreview(station.image_url)
       }
+    } else {
+      // Reset form when adding a new station
+      setFormData({
+        name: '',
+        address: '',
+        latitude: '',
+        longitude: '',
+        station_type: 'swap',
+        total_slots: '',
+        operating_hours: '24/7',
+        contact_info: '',
+        manager_id: '',
+        accepts_plastic: false,
+        self_service: true,
+        image: null,
+      });
+      setImagePreview(null);
     }
-  }, [station])
+  }, [station, isOpen])
 
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {}
@@ -209,7 +226,8 @@ export function StationForm({ station, onClose, onSuccess }: StationFormProps) {
         await createStationMutation.mutateAsync(formDataToSend)
       }
 
-      onSuccess()
+      toast.success(`Station ${isEditing ? 'updated' : 'created'} successfully`);
+      onClose();
     } catch (error: any) {
       console.error('Error saving station:', error)
       toast.error(error.response?.data?.error || 'Failed to save station')
@@ -241,7 +259,7 @@ export function StationForm({ station, onClose, onSuccess }: StationFormProps) {
   }
 
   return (
-    <Dialog open={true} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-xl font-semibold">

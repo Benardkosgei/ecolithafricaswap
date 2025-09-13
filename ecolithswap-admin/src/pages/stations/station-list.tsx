@@ -1,7 +1,6 @@
 
 import React, { useState, useMemo } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Link } from "react-router-dom";
 import { 
   ColumnDef,
   getCoreRowModel,
@@ -42,14 +41,24 @@ import { StationDetails } from "./station-details.tsx";
 import toast from "react-hot-toast";
 import { Checkbox } from "../../components/ui/checkbox";
 
+interface Station {
+  id: string;
+  name: string;
+  location: string;
+  availableBatteries: number;
+  inUseBatteries: number;
+  status: string;
+  inMaintenance: boolean;
+}
+
 export function StationListPage() {
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
   const [isFormOpen, setFormOpen] = useState(false);
-  const [selectedStation, setSelectedStation] = useState(null);
+  const [selectedStation, setSelectedStation] = useState<Station | null>(null);
   const [isDetailsOpen, setDetailsOpen] = useState(false);
 
-  const { data: stations, isLoading, error } = useStations(search);
+  const { data: stations, isLoading, error } = useStations(1, 10, { search });
   const { data: stats } = useStationStats();
 
   const deleteMutation = useDeleteStation();
@@ -58,10 +67,10 @@ export function StationListPage() {
 
   const [rowSelection, setRowSelection] = useState({});
 
-  const handleDelete = (id) => {
+  const handleDelete = (id: string) => {
     toast.promise(
       deleteMutation.mutateAsync(id).then(() => {
-        queryClient.invalidateQueries("stations");
+        queryClient.invalidateQueries({ queryKey: ['stations'] });
       }),
       {
         loading: "Deleting station...",
@@ -71,10 +80,10 @@ export function StationListPage() {
     );
   };
 
-  const handleToggleMaintenance = (id, inMaintenance) => {
+  const handleToggleMaintenance = (id: string, inMaintenance: boolean) => {
     toast.promise(
-      toggleMaintenanceMutation.mutateAsync({ id, inMaintenance }).then(() => {
-        queryClient.invalidateQueries("stations");
+      toggleMaintenanceMutation.mutateAsync({ id, maintenance_mode: !inMaintenance }).then(() => {
+        queryClient.invalidateQueries({ queryKey: ['stations'] });
       }),
       {
         loading: "Updating maintenance mode...",
@@ -84,7 +93,7 @@ export function StationListPage() {
     );
   };
   
-  const columns = useMemo(() => [
+  const columns: ColumnDef<Station>[] = useMemo(() => [
     {
       id: "select",
       header: ({ table }) => (
@@ -119,7 +128,7 @@ export function StationListPage() {
           <div 
             className="font-medium text-blue-600 hover:underline cursor-pointer"
             onClick={() => {
-              setSelectedStation(row.original.id);
+              setSelectedStation(row.original);
               setDetailsOpen(true);
             }}
           >
@@ -175,9 +184,9 @@ export function StationListPage() {
                             <Pencil className="mr-2 h-4 w-4" />
                             Edit
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleToggleMaintenance(station.id, station.status !== "Maintenance")}>
+                        <DropdownMenuItem onClick={() => handleToggleMaintenance(station.id, station.inMaintenance)}>
                           <Wrench className="mr-2 h-4 w-4" />
-                          {station.status === "Maintenance" ? "Disable Maintenance" : "Enable Maintenance"}
+                          {station.inMaintenance ? "Disable Maintenance" : "Enable Maintenance"}
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <AlertDialogTrigger asChild>
@@ -193,7 +202,7 @@ export function StationListPage() {
     }], [queryClient]);
 
   const table = useReactTable({
-    data: stations || [],
+    data: stations?.data.data || [],
     columns,
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
@@ -214,13 +223,29 @@ export function StationListPage() {
     const stationIds = selectedRows.map(row => row.original.id);
     toast.promise(
       bulkUpdateMutation.mutateAsync({ station_ids: stationIds, update_data: { is_active: false } }).then(() => {
-        queryClient.invalidateQueries("stations");
+        queryClient.invalidateQueries({ queryKey: ['stations'] });
         setRowSelection({});
       }),
       {
         loading: "Disabling stations...",
         success: "Stations disabled successfully!",
         error: "Failed to disable stations.",
+      }
+    );
+  };
+
+  const handleBulkDelete = () => {
+    if (selectedRows.length === 0) return;
+    const stationIds = selectedRows.map(row => row.original.id);
+    toast.promise(
+      Promise.all(stationIds.map(id => deleteMutation.mutateAsync(id))).then(() => {
+        queryClient.invalidateQueries({ queryKey: ['stations'] });
+        setRowSelection({});
+      }),
+      {
+        loading: "Deleting stations...",
+        success: "Stations deleted successfully!",
+        error: "Failed to delete stations.",
       }
     );
   };
@@ -233,10 +258,10 @@ export function StationListPage() {
         <PageHeader title="Charging Stations" />
 
         <div className="grid gap-4 md:grid-cols-4">
-            <div className="p-4 border rounded-lg">Total Stations: {stats?.totalStations}</div>
-            <div className="p-4 border rounded-lg">Active Stations: {stats?.activeStations}</div>
-            <div className="p-4 border rounded-lg">Avg. Battery Level: {stats?.avgBatteryLevel?.toFixed(2)}%</div>
-            <div className="p-4 border rounded-lg">Avg. Availability: {stats?.avgAvailability?.toFixed(2)}%</div>
+            <div className="p-4 border rounded-lg">Total Stations: {stats?.total_stations}</div>
+            <div className="p-4 border rounded-lg">Active Stations: {stats?.active_stations}</div>
+            <div className="p-4 border rounded-lg">Under Maintenance: {stats?.maintenance_stations}</div>
+            <div className="p-4 border rounded-lg">Accepts Plastic: {stats?.plastic_accepting_stations}</div>
         </div>
 
         <div className="flex justify-between items-center">
@@ -284,7 +309,7 @@ export function StationListPage() {
                 <Power className="mr-2 h-4 w-4" />
                 Disable
               </Button>
-              <Button variant="destructive" size="sm">
+              <Button variant="destructive" size="sm" onClick={handleBulkDelete}>
                 <Trash2 className="mr-2 h-4 w-4" />
                 Delete
               </Button>
@@ -306,7 +331,7 @@ export function StationListPage() {
         
         {selectedStation && (
           <StationDetails
-            stationId={selectedStation}
+            stationId={selectedStation.id}
             isOpen={isDetailsOpen}
             onClose={() => setDetailsOpen(false)}
           />

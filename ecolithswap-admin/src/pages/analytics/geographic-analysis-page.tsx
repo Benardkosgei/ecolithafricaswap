@@ -25,7 +25,7 @@ export function GeographicAnalysisPage() {
     return analyticsAPI.getGeographicAnalysis(
       dateRange.from.toISOString(),
       dateRange.to.toISOString()
-    );
+    ).then(res => res.data);
   });
 
   const position: [number, number] = [51.505, -0.09];

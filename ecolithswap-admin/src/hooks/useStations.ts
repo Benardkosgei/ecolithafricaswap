@@ -34,7 +34,9 @@ export const useStation = (id: string) => {
 export const useCreateStation = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (newStation: Partial<Station>) => api.post('/stations', newStation),
+    mutationFn: (newStation: FormData) => api.post('/stations', newStation, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['stations'] });
     },
@@ -44,13 +46,15 @@ export const useCreateStation = () => {
 /**
  * Updates an existing station.
  */
-export const useUpdateStation = (id: string) => {
+export const useUpdateStation = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (updatedStation: Partial<Station>) => api.put(`/stations/${id}`, updatedStation),
-    onSuccess: () => {
+    mutationFn: ({ id, data }: { id: string; data: FormData }) => api.put(`/stations/${id}`, data, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }),
+    onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['stations'] });
-      queryClient.invalidateQueries({ queryKey: ['station', id] });
+      queryClient.invalidateQueries({ queryKey: ['station', variables.id] });
     },
   });
 };
@@ -74,7 +78,7 @@ export const useDeleteStation = () => {
 export const useToggleMaintenance = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, is_active }: { id: string, is_active: boolean }) => api.patch(`/stations/${id}/maintenance`, { is_active }),
+    mutationFn: ({ id, maintenance_mode }: { id: string, maintenance_mode: boolean }) => api.patch(`/stations/${id}/maintenance`, { maintenance_mode }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['stations'] });
     },
@@ -92,7 +96,7 @@ export const useToggleMaintenance = () => {
 export const useStationStats = () => {
   return useQuery({
     queryKey: ['stationStats'],
-    queryFn: () => api.get('/stations/stats').then(res => res.data),
+    queryFn: () => api.get('/stations/stats/overview').then(res => res.data),
   });
 };
 
@@ -107,7 +111,7 @@ export const useStationStats = () => {
 export const useBulkUpdateStations = () => {
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: (stationIds: string[], data: Partial<Station>) => api.post('/stations/bulk-update', { stationIds, data }),
+        mutationFn: ({ station_ids, update_data }: { station_ids: string[], update_data: Partial<Station> }) => api.patch('/stations/bulk/update', { station_ids, update_data }),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['stations'] });
         },

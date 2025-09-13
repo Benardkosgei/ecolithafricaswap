@@ -43,25 +43,18 @@ export function BatteryListPage() {
     };
   }, [searchTerm]);
 
-
   const { data: statsData, isLoading: statsLoading } = useQuery<BatteryStats>({
     queryKey: ['batteryStats'],
-    queryFn: async () => {
-      const response = await batteriesAPI.getBatteryStats()
-      return response.data
-    },
+    queryFn: () => batteriesAPI.getBatteryStats().then(res => res.data),
   })
 
   const { data: batteryData, isLoading: batteriesLoading } = useQuery<PaginationResponse<Battery>>({
     queryKey: ['batteries', page, debouncedSearchTerm, statusFilter],
-    queryFn: async () => {
-      const response = await batteriesAPI.getBatteries({
+    queryFn: () => batteriesAPI.getBatteries({
         page,
         search: debouncedSearchTerm,
         status: statusFilter === 'all' ? undefined : statusFilter,
-      })
-      return response.data
-    },
+      }).then(res => res.data),
   })
 
   const getChargeColor = (level: number) => {
@@ -114,7 +107,7 @@ export function BatteryListPage() {
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Available</p>
-                <p className="text-2xl font-bold text-green-600">{statsLoading ? '...' : formatNumber(statsData?.availableBatteries ?? 0)}</p>
+                <p className="text-2xl font-bold text-green-600">{statsLoading ? '...' : formatNumber(statsData?.available ?? 0)}</p>
               </div>
             </div>
           </CardContent>
@@ -128,7 +121,7 @@ export function BatteryListPage() {
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">In Use</p>
-                <p className="text-2xl font-bold text-blue-600">{statsLoading ? '...' : formatNumber(statsData?.inUseBatteries ?? 0)}</p>
+                <p className="text-2xl font-bold text-blue-600">{statsLoading ? '...' : formatNumber(statsData?.rented ?? 0)}</p>
               </div>
             </div>
           </CardContent>
@@ -142,7 +135,7 @@ export function BatteryListPage() {
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Charging</p>
-                <p className="text-2xl font-bold text-yellow-600">{statsLoading ? '...' : formatNumber(statsData?.chargingBatteries ?? 0)}</p>
+                <p className="text-2xl font-bold text-yellow-600">{statsLoading ? '...' : formatNumber(statsData?.charging ?? 0)}</p>
               </div>
             </div>
           </CardContent>
@@ -172,7 +165,7 @@ export function BatteryListPage() {
             >
               <option value="all">All Status</option>
               <option value="available">Available</option>
-              <option value="in-use">In Use</option>
+              <option value="rented">In Use</option>
               <option value="charging">Charging</option>
               <option value="maintenance">Maintenance</option>
             </select>
@@ -212,29 +205,29 @@ export function BatteryListPage() {
                       {battery.serialNumber}
                     </TableCell>
                     <TableCell>{battery.model}</TableCell>
-                    <TableCell>{battery.capacityMah} mAh</TableCell>
+                    <TableCell>{battery.capacityKwh} kWh</TableCell>
                     <TableCell>
                       <div className="flex items-center">
                         <div className="w-full bg-gray-200 rounded-full h-2 mr-2">
                           <div
                             className={`h-2 rounded-full ${
-                              battery.chargeLevel >= 70
+                              battery.currentChargePercentage >= 70
                                 ? 'bg-green-500'
-                                : battery.chargeLevel >= 30
+                                : battery.currentChargePercentage >= 30
                                 ? 'bg-yellow-500'
                                 : 'bg-red-500'
                             }`}
-                            style={{ width: `${battery.chargeLevel}%` }}
+                            style={{ width: `${battery.currentChargePercentage}%` }}
                           />
                         </div>
-                        <span className={`text-sm font-medium ${getChargeColor(battery.chargeLevel)}`}>
-                          {battery.chargeLevel}%
+                        <span className={`text-sm font-medium ${getChargeColor(battery.currentChargePercentage)}`}>
+                          {battery.currentChargePercentage}%
                         </span>
                       </div>
                     </TableCell>
                     <TableCell>
-                      <span className={`font-medium ${getHealthColor(battery.healthPercentage)}`}>
-                        {battery.healthPercentage}%
+                      <span className={`font-medium ${getHealthColor(battery.healthStatus)}`}>
+                        {battery.healthStatus}%
                       </span>
                     </TableCell>
                     <TableCell>
@@ -250,8 +243,8 @@ export function BatteryListPage() {
                         </div>
                       )}
                     </TableCell>
-                    <TableCell>{formatDate(battery.lastService)}</TableCell>
-                    <TableCell>{battery.totalCycles}</TableCell>
+                    <TableCell>{formatDate(battery.lastMaintenanceDate)}</TableCell>
+                    <TableCell>{battery.cycleCount}</TableCell>
                     <TableCell>
                       <div className="flex items-center space-x-2">
                         <Button variant="ghost" size="icon">
@@ -282,7 +275,7 @@ export function BatteryListPage() {
             <Button
               variant="outline"
               onClick={() => setPage((prev) => prev + 1)}
-              disabled={page === batteryData?.pagination.totalPages}
+              disabled={page === (batteryData?.pagination.totalPages ?? 1)}
             >
               Next
             </Button>

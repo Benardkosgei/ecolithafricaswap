@@ -20,7 +20,7 @@ export function TicketDetailsPage() {
 
   const { data: ticket, isLoading, error } = useQuery<SupportTicket>({
     queryKey: ['ticket', id],
-    queryFn: () => supportAPI.getTicket(id!),
+    queryFn: () => supportAPI.getTicket(id!).then(res => res.data),
     enabled: !!id,
   });
 

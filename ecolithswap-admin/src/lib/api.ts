@@ -518,14 +518,14 @@ export const supportAPI = {
 
 // Analytics API
 export const analyticsAPI = {
-  getUsageAnalytics: (period?: string) =>
-    api.get('/analytics/usage', { params: { period } }),
+  getUsageAnalytics: (startDate?: string, endDate?: string) =>
+    api.get('/analytics/usage', { params: { startDate, endDate } }),
   
-  getUserAnalytics: (period?: string) =>
-    api.get('/analytics/user', { params: { period } }),
+  getUserAnalytics: (startDate?: string, endDate?: string) =>
+    api.get('/analytics/user', { params: { startDate, endDate } }),
 
-  getGeographicAnalysis: (period?: string) =>
-    api.get('/analytics/geographic', { params: { period } }),
+  getGeographicAnalysis: (startDate?: string, endDate?: string) =>
+    api.get('/analytics/geographic', { params: { startDate, endDate } }),
 };
 
 // Environmental API
@@ -538,6 +538,9 @@ export const environmentalAPI = {
 
   getWasteSubmissions: (params?: PaginationParams) =>
     api.get('/environmental/waste-submissions', { params }),
+
+  updateSubmissionStatus: (id: string, status: 'APPROVED' | 'REJECTED') =>
+    api.patch(`/environmental/waste-submissions/${id}/status`, { status }),
 };
 
 // Settings API

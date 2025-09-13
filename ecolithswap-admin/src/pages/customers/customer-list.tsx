@@ -24,94 +24,15 @@ import {
   MessageCircle,
 } from 'lucide-react'
 import { formatDate, formatCurrency } from '../../lib/utils'
-
-interface CustomerData {
-  id: string
-  name: string
-  email: string
-  phone: string
-  subscriptionType: string
-  subscriptionStatus: string
-  totalSwaps: number
-  loyaltyPoints: number
-  totalSpent: number
-  registrationDate: string
-  lastSwapDate: string
-  isVerified: boolean
-}
-
-// Mock data - would come from API
-const mockCustomers: CustomerData[] = [
-  {
-    id: '1',
-    name: 'John Doe',
-    email: 'john.doe@email.com',
-    phone: '+1 (555) 123-4567',
-    subscriptionType: 'premium',
-    subscriptionStatus: 'active',
-    totalSwaps: 156,
-    loyaltyPoints: 2340,
-    totalSpent: 468,
-    registrationDate: '2024-08-15T10:30:00Z',
-    lastSwapDate: '2025-02-01T14:22:00Z',
-    isVerified: true,
-  },
-  {
-    id: '2',
-    name: 'Sarah Johnson',
-    email: 'sarah.j@email.com',
-    phone: '+1 (555) 987-6543',
-    subscriptionType: 'basic',
-    subscriptionStatus: 'active',
-    totalSwaps: 89,
-    loyaltyPoints: 1245,
-    totalSpent: 267,
-    registrationDate: '2024-09-22T16:45:00Z',
-    lastSwapDate: '2025-01-30T11:15:00Z',
-    isVerified: true,
-  },
-  {
-    id: '3',
-    name: 'Mike Chen',
-    email: 'mike.chen@email.com',
-    phone: '+1 (555) 456-7890',
-    subscriptionType: 'premium',
-    subscriptionStatus: 'expired',
-    totalSwaps: 234,
-    loyaltyPoints: 3567,
-    totalSpent: 702,
-    registrationDate: '2024-06-10T09:20:00Z',
-    lastSwapDate: '2025-01-28T09:45:00Z',
-    isVerified: false,
-  },
-  {
-    id: '4',
-    name: 'Emily Rodriguez',
-    email: 'emily.r@email.com',
-    phone: '+1 (555) 234-5678',
-    subscriptionType: 'basic',
-    subscriptionStatus: 'active',
-    totalSwaps: 45,
-    loyaltyPoints: 675,
-    totalSpent: 135,
-    registrationDate: '2024-12-05T13:10:00Z',
-    lastSwapDate: '2025-01-31T16:30:00Z',
-    isVerified: true,
-  },
-]
+import { useCustomers, useCustomerStats } from '../../hooks/useCustomers'
+import { Customer } from '../../types'
 
 export function CustomerListPage() {
-  const [searchTerm, setSearchTerm] = useState('')
+  const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
 
-  const filteredCustomers = mockCustomers.filter((customer) => {
-    const matchesSearch = customer.name
-      .toLowerCase()
-      .includes(searchTerm.toLowerCase()) ||
-      customer.email.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesStatus = statusFilter === 'all' || customer.subscriptionStatus === statusFilter
-    return matchesSearch && matchesStatus
-  })
+  const { data: customersData, isLoading, error } = useCustomers(1, 10, { search, status: statusFilter });
+  const { data: stats } = useCustomerStats();
 
   const getSubscriptionColor = (type: string) => {
     return type === 'premium' ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800'
@@ -160,7 +81,7 @@ export function CustomerListPage() {
               <Users className="h-8 w-8 text-[#2E7D32]" />
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Total Customers</p>
-                <p className="text-2xl font-bold">12,547</p>
+                <p className="text-2xl font-bold">{stats?.totalCustomers}</p>
               </div>
             </div>
           </CardContent>
@@ -174,7 +95,7 @@ export function CustomerListPage() {
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Active</p>
-                <p className="text-2xl font-bold text-green-600">10,234</p>
+                <p className="text-2xl font-bold text-green-600">{stats?.activeCustomers}</p>
               </div>
             </div>
           </CardContent>
@@ -188,7 +109,7 @@ export function CustomerListPage() {
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Premium</p>
-                <p className="text-2xl font-bold text-purple-600">3,892</p>
+                <p className="text-2xl font-bold text-purple-600">{stats?.premiumCustomers}</p>
               </div>
             </div>
           </CardContent>
@@ -202,7 +123,7 @@ export function CustomerListPage() {
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Avg. Loyalty Points</p>
-                <p className="text-2xl font-bold text-yellow-600">1,847</p>
+                <p className="text-2xl font-bold text-yellow-600">{stats?.avgLoyaltyPoints}</p>
               </div>
             </div>
           </CardContent>
@@ -220,8 +141,8 @@ export function CustomerListPage() {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input
                 placeholder="Search customers by name or email..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
                 className="pl-10"
               />
             </div>
@@ -246,86 +167,92 @@ export function CustomerListPage() {
           </div>
 
           {/* Customers Table */}
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Customer</TableHead>
-                <TableHead>Contact</TableHead>
-                <TableHead>Subscription</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Total Swaps</TableHead>
-                <TableHead>Loyalty Points</TableHead>
-                <TableHead>Total Spent</TableHead>
-                <TableHead>Last Swap</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredCustomers.map((customer) => (
-                <TableRow key={customer.id}>
-                  <TableCell>
-                    <div>
-                      <div className="flex items-center">
-                        <div className="font-medium">{customer.name}</div>
-                        {customer.isVerified && (
-                          <div className="ml-2 w-4 h-4 bg-green-100 rounded-full flex items-center justify-center">
-                            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                          </div>
-                        )}
-                      </div>
-                      <div className="text-sm text-gray-500">
-                        Joined {formatDate(customer.registrationDate)}
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div>
-                      <div className="text-sm">{customer.email}</div>
-                      <div className="text-sm text-gray-500">{customer.phone}</div>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Badge className={getSubscriptionColor(customer.subscriptionType)}>
-                      {customer.subscriptionType}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <Badge className={getStatusColor(customer.subscriptionStatus)}>
-                      {customer.subscriptionStatus}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="font-medium">
-                    {customer.totalSwaps}
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center">
-                      <Award className="h-4 w-4 mr-1 text-yellow-500" />
-                      {customer.loyaltyPoints}
-                    </div>
-                  </TableCell>
-                  <TableCell className="font-medium">
-                    {formatCurrency(customer.totalSpent)}
-                  </TableCell>
-                  <TableCell>
-                    {formatDate(customer.lastSwapDate)}
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center space-x-2">
-                      <Button variant="ghost" size="icon">
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="icon">
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="icon">
-                        <MessageCircle className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
+          {isLoading ? (
+            <div>Loading...</div>
+          ) : error ? (
+            <div className="text-red-500">Error loading customers.</div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Customer</TableHead>
+                  <TableHead>Contact</TableHead>
+                  <TableHead>Subscription</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Total Swaps</TableHead>
+                  <TableHead>Loyalty Points</TableHead>
+                  <TableHead>Total Spent</TableHead>
+                  <TableHead>Last Swap</TableHead>
+                  <TableHead>Actions</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {customersData.map((customer: Customer) => (
+                  <TableRow key={customer.id}>
+                    <TableCell>
+                      <div>
+                        <div className="flex items-center">
+                          <div className="font-medium">{customer.name}</div>
+                          {customer.isVerified && (
+                            <div className="ml-2 w-4 h-4 bg-green-100 rounded-full flex items-center justify-center">
+                              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                            </div>
+                          )}
+                        </div>
+                        <div className="text-sm text-gray-500">
+                          Joined {formatDate(customer.registrationDate)}
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div>
+                        <div className="text-sm">{customer.email}</div>
+                        <div className="text-sm text-gray-500">{customer.phone}</div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge className={getSubscriptionColor(customer.subscriptionType)}>
+                        {customer.subscriptionType}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Badge className={getStatusColor(customer.subscriptionStatus)}>
+                        {customer.subscriptionStatus}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="font-medium">
+                      {customer.totalSwaps}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center">
+                        <Award className="h-4 w-4 mr-1 text-yellow-500" />
+                        {customer.loyaltyPoints}
+                      </div>
+                    </TableCell>
+                    <TableCell className="font-medium">
+                      {formatCurrency(customer.totalSpent)}
+                    </TableCell>
+                    <TableCell>
+                      {formatDate(customer.lastSwapDate)}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center space-x-2">
+                        <Button variant="ghost" size="icon">
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon">
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon">
+                          <MessageCircle className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
         </CardContent>
       </Card>
     </div>

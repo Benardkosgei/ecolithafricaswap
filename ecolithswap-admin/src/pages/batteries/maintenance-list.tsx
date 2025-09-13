@@ -42,14 +42,11 @@ export function MaintenanceListPage() {
 
   const { data: batteryData, isLoading: batteriesLoading } = useQuery<PaginationResponse<Battery>>({
     queryKey: ['batteries', page, debouncedSearchTerm, 'maintenance'],
-    queryFn: async () => {
-      const response = await batteriesAPI.getBatteries({
+    queryFn: () => batteriesAPI.getBatteries({
         page,
         search: debouncedSearchTerm,
         status: 'maintenance',
-      })
-      return response.data
-    },
+      }).then(res => res.data),
   })
 
   return (
@@ -72,7 +69,7 @@ export function MaintenanceListPage() {
               <Wrench className="h-8 w-8 text-yellow-600" />
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Batteries in Maintenance</p>
-                <p className="text-2xl font-bold">{batteriesLoading ? '...' : batteryData?.pagination.totalItems ?? 0}</p>
+                <p className="text-2xl font-bold">{batteriesLoading ? '...' : batteryData?.pagination.total ?? 0}</p>
               </div>
             </div>
           </CardContent>
@@ -137,7 +134,7 @@ export function MaintenanceListPage() {
                     <TableCell>{battery.model}</TableCell>
                     <TableCell>
                       <span className={`font-medium`}>
-                        {battery.healthPercentage}%
+                        {battery.healthStatus}%
                       </span>
                     </TableCell>
                     <TableCell>
@@ -145,8 +142,8 @@ export function MaintenanceListPage() {
                         {battery.status}
                       </Badge>
                     </TableCell>
-                    <TableCell>{formatDate(battery.lastService)}</TableCell>
-                    <TableCell>{battery.totalCycles}</TableCell>
+                    <TableCell>{formatDate(battery.lastMaintenanceDate)}</TableCell>
+                    <TableCell>{battery.cycleCount}</TableCell>
                     <TableCell>
                       <div className="flex items-center space-x-2">
                         <Button variant="outline" size="sm">

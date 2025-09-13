@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { authAPI, userProfilesAPI, filesAPI, Customer } from '../../lib/api';
+import { authAPI, userProfilesAPI, Customer } from '../../lib/api';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
@@ -25,7 +25,7 @@ export function ProfileSettings() {
     queryFn: () => authAPI.getProfile().then((res) => res.data),
   });
 
-  const { control, handleSubmit, setValue } = useForm<z.infer<typeof profileSchema>>({
+  const { control, handleSubmit } = useForm<z.infer<typeof profileSchema>>({
     resolver: zodResolver(profileSchema),
     values: {
         name: user?.name ?? '',
@@ -38,33 +38,21 @@ export function ProfileSettings() {
     onSuccess: () => {
       toast.success('Profile updated successfully!');
       queryClient.invalidateQueries({ queryKey: ['profile'] });
+      setAvatarFile(null);
     },
     onError: (error) => {
       toast.error(`Failed to update profile: ${error.message}`);
     },
   });
 
-  const uploadAvatarMutation = useMutation<any, Error, File>({
-    mutationFn: (file) => filesAPI.uploadProfileAvatar(file),
-    onSuccess: (data) => {
-        const formData = new FormData();
-        formData.append('avatar', data.data.url);
-        updateProfileMutation.mutate(formData);
-    },
-    onError: (error) => {
-        toast.error(`Failed to upload avatar: ${error.message}`);
-    }
-  });
-
   const onSubmit = (data: z.infer<typeof profileSchema>) => {
     const formData = new FormData();
     formData.append('name', data.name);
     formData.append('email', data.email);
-    if(avatarFile) {
-        uploadAvatarMutation.mutate(avatarFile);
-    } else {
-        updateProfileMutation.mutate(formData);
+    if (avatarFile) {
+      formData.append('avatar', avatarFile);
     }
+    updateProfileMutation.mutate(formData);
   };
 
   if (isLoading) {
@@ -125,8 +113,8 @@ export function ProfileSettings() {
           </div>
 
           <div className="flex justify-end">
-            <Button type="submit" disabled={updateProfileMutation.isPending || uploadAvatarMutation.isPending}>
-                {updateProfileMutation.isPending || uploadAvatarMutation.isPending ? 'Saving...' : 'Save Changes'}
+            <Button type="submit" disabled={updateProfileMutation.isPending}>
+                {updateProfileMutation.isPending ? 'Saving...' : 'Save Changes'}
             </Button>
           </div>
         </form>

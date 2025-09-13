@@ -29,18 +29,19 @@ export function ApiKeysPage() {
     });
 
     const createMutation = useMutation({
-        mutationFn: () => settingsAPI.createApiKey(keyName),
+        mutationFn: (name: string) => settingsAPI.createApiKey({ name, expires_in_days: 30 }), // 30-day expiration by default
         onSuccess: (data) => {
             toast.success('API Key created successfully!');
             queryClient.invalidateQueries({ queryKey: ['apiKeys'] });
             setNewKey(data.data.key);
             setCreateOpen(false);
+            setKeyName('');
         },
         onError: () => toast.error('Failed to create API key.'),
     });
 
-    const revokeMutation = useMutation({
-        mutationFn: (keyId: string) => settingsAPI.revokeApiKey(keyId),
+    const deleteMutation = useMutation({
+        mutationFn: (keyId: string) => settingsAPI.deleteApiKey(keyId),
         onSuccess: () => {
             toast.success('API Key revoked successfully!');
             queryClient.invalidateQueries({ queryKey: ['apiKeys'] });
@@ -64,7 +65,7 @@ export function ApiKeysPage() {
         {
             id: 'actions',
             cell: ({ row }) => (
-                <Button variant="destructive" size="sm" onClick={() => revokeMutation.mutate(row.original.id)}>
+                <Button variant="destructive" size="sm" onClick={() => deleteMutation.mutate(row.original.id)}>
                     <Trash2 className="h-4 w-4" /> Revoke
                 </Button>
             ),
@@ -87,7 +88,7 @@ export function ApiKeysPage() {
                         <Input placeholder="e.g., 'My Production Server'" value={keyName} onChange={e => setKeyName(e.target.value)} />
                         <DialogFooter>
                             <Button variant="outline" onClick={() => setCreateOpen(false)}>Cancel</Button>
-                            <Button onClick={() => createMutation.mutate()} disabled={createMutation.isLoading}>
+                            <Button onClick={() => createMutation.mutate(keyName)} disabled={createMutation.isLoading || !keyName}>
                                 {createMutation.isLoading ? 'Generating...' : 'Generate Key'}
                             </Button>
                         </DialogFooter>

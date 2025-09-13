@@ -103,7 +103,7 @@ router.get('/', async (req, res) => {
     const totalCount = await countQuery.count('id as count').first();
 
     res.json({
-      stations,
+      data: stations,
       pagination: {
         page: page,
         limit: limit,
@@ -420,7 +420,7 @@ router.delete('/:id', requireAdmin, async (req, res) => {
 });
 
 // Get station statistics
-router.get('/stats', async (req, res) => {
+router.get('/stats/overview', requireAdminOrManager, async (req, res) => {
   try {
     const stats = await Promise.all([
       db('stations').count('id as count').first(),
@@ -482,6 +482,24 @@ router.get('/nearby/:latitude/:longitude', async (req, res) => {
   } catch (error) {
     console.error('Get nearby stations error:', error);
     res.status(500).json({ error: 'Failed to fetch nearby stations' });
+  }
+});
+
+router.post('/files/upload', upload.single('file'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No file uploaded.' });
+    }
+
+    const fileUrl = `/uploads/stations/${req.file.filename}`;
+
+    res.status(201).json({ 
+      message: 'File uploaded successfully', 
+      url: fileUrl
+    });
+  } catch (error) {
+    console.error('File upload error:', error);
+    res.status(500).json({ error: 'Failed to upload file.' });
   }
 });
 

@@ -87,7 +87,6 @@ function App() {
                       
                       {/* Station Management */}
                       <Route path="/stations" element={<StationListPage />} />
-                      <Route path="/stations/add" element={<div>Add Station Page</div>} />
                       <Route path="/stations/map" element={<div>Station Map Page</div>} />
                       
                       {/* Customer Management */}

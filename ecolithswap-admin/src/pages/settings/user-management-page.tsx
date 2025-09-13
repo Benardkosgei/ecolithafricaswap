@@ -1,6 +1,6 @@
 import React from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { settingsAPI } from '../../lib/api';
+import { usersAPI } from '../../lib/api';
 import { DataTable } from '../../components/ui/data-table';
 import { Button } from '../../components/ui/button';
 import { PlusCircle, Trash2 } from 'lucide-react';
@@ -26,11 +26,11 @@ export function UserManagementPage() {
 
     const { data: users, isLoading } = useQuery<User[]>({
         queryKey: ['users'],
-        queryFn: () => settingsAPI.getUsers().then(res => res.data),
+        queryFn: () => usersAPI.getUsers().then(res => res.data),
     });
 
     const inviteMutation = useMutation({
-        mutationFn: () => settingsAPI.inviteUser(newUser.email, newUser.role as any),
+        mutationFn: () => usersAPI.createUser(newUser.email, newUser.role as any),
         onSuccess: () => {
             toast.success('User invited successfully!');
             queryClient.invalidateQueries({ queryKey: ['users'] });
@@ -40,7 +40,7 @@ export function UserManagementPage() {
     });
 
     const deleteMutation = useMutation({
-        mutationFn: (userId: string) => settingsAPI.deleteUser(userId),
+        mutationFn: (userId: string) => usersAPI.deleteUser(userId),
         onSuccess: () => {
             toast.success('User deleted successfully!');
             queryClient.invalidateQueries({ queryKey: ['users'] });
