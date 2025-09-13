@@ -9,10 +9,13 @@ import { Station } from '../types';
 /**
  * Fetches a paginated list of stations.
  */
-export const useStations = (page = 1, limit = 10, filters = {}) => {
+export const useStations = (page = 1, limit = 10, filters: { search?: string } = {}) => {
   return useQuery({
     queryKey: ['stations', page, limit, filters],
-    queryFn: () => api.get('/stations', { params: { page, limit, ...filters } }).then(res => res.data),
+    queryFn: async () => {
+      const response = await api.get('/stations', { params: { page, limit, ...filters } });
+      return response.data;
+    },
     placeholderData: (previousData) => previousData,
   });
 };
@@ -39,6 +42,7 @@ export const useCreateStation = () => {
     }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['stations'] });
+      queryClient.invalidateQueries({ queryKey: ['stationStats'] });
     },
   });
 };
@@ -49,15 +53,18 @@ export const useCreateStation = () => {
 export const useUpdateStation = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: FormData }) => api.put(`/stations/${id}`, data, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    }),
+    mutationFn: ({ id, data }: { id: string; data: FormData }) => 
+      api.post(`/stations/${id}`, data, { 
+        headers: { 'Content-Type': 'multipart/form-data' },
+      }),
     onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['stations'] });
       queryClient.invalidateQueries({ queryKey: ['station', variables.id] });
+      queryClient.invalidateQueries({ queryKey: ['stationStats'] });
     },
   });
 };
+
 
 /**
  * Deletes a station by its ID.
@@ -68,6 +75,7 @@ export const useDeleteStation = () => {
     mutationFn: (id: string) => api.delete(`/stations/${id}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['stations'] });
+      queryClient.invalidateQueries({ queryKey: ['stationStats'] });
     },
   });
 };
@@ -81,6 +89,7 @@ export const useToggleMaintenance = () => {
     mutationFn: ({ id, maintenance_mode }: { id: string, maintenance_mode: boolean }) => api.patch(`/stations/${id}/maintenance`, { maintenance_mode }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['stations'] });
+      queryClient.invalidateQueries({ queryKey: ['stationStats'] });
     },
   });
 };
@@ -96,7 +105,7 @@ export const useToggleMaintenance = () => {
 export const useStationStats = () => {
   return useQuery({
     queryKey: ['stationStats'],
-    queryFn: () => api.get('/stations/stats/overview').then(res => res.data),
+    queryFn: () => api.get('/stations/stats').then(res => res.data),
   });
 };
 
@@ -111,9 +120,10 @@ export const useStationStats = () => {
 export const useBulkUpdateStations = () => {
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: ({ station_ids, update_data }: { station_ids: string[], update_data: Partial<Station> }) => api.patch('/stations/bulk/update', { station_ids, update_data }),
+        mutationFn: ({ station_ids, update_data }: { station_ids: string[], update_data: Partial<Station> }) => api.post('/stations/bulk-update', { station_ids, update_data }),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['stations'] });
+            queryClient.invalidateQueries({ queryKey: ['stationStats'] });
         },
     });
 };

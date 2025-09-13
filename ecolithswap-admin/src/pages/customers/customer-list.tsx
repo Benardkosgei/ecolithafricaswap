@@ -1,260 +1,217 @@
-import React, { useState } from 'react'
+import React, { useState, useMemo } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import { 
+  ColumnDef,
+  getCoreRowModel,
+  getPaginationRowModel,
+  getFilteredRowModel,
+  getSortedRowModel,
+  useReactTable,
+  PaginationState,
+} from '@tanstack/react-table';
+import { 
+  ArrowUpDown, 
+  MoreHorizontal, 
+  Pencil, 
+  Trash2, 
+  PlusCircle, 
+  Users, 
+  UserCheck, 
+  UserX, 
+  UserPlus 
+} from 'lucide-react';
+import { useDebounce } from '@uidotdev/usehooks';
+
+import { PageHeader } from '../../components/ui/page-header';
+import { DataTable } from '../../components/ui/data-table';
+import { Button } from '../../components/ui/button';
+import { Input } from '../../components/ui/input';
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '../../components/ui/table'
-import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card'
-import { Input } from '../../components/ui/input'
-import { Button } from '../../components/ui/button'
-import { Badge } from '../../components/ui/badge'
-import {
-  Search,
-  Filter,
-  Download,
-  Plus,
-  Edit,
-  Eye,
-  Users,
-  CreditCard,
-  Award,
-  MessageCircle,
-} from 'lucide-react'
-import { formatDate, formatCurrency } from '../../lib/utils'
-import { useCustomers, useCustomerStats } from '../../hooks/useCustomers'
-import { Customer } from '../../types'
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '../../components/ui/dropdown-menu';
+import { Badge } from '../../components/ui/badge';
+import { 
+  AlertDialog, 
+  AlertDialogAction, 
+  AlertDialogCancel, 
+  AlertDialogContent, 
+  AlertDialogDescription, 
+  AlertDialogFooter, 
+  AlertDialogHeader, 
+  AlertDialogTitle, 
+} from '../../components/ui/alert-dialog';
+import { useCustomers, useDeleteCustomer, useCustomerStats } from '../../hooks/useCustomers';
+import { CustomerForm } from './customer-form';
+import { Customer } from '../../types/customer';
+import toast from 'react-hot-toast';
 
 export function CustomerListPage() {
-  const [search, setSearch] = useState('')
-  const [statusFilter, setStatusFilter] = useState('all')
+  const queryClient = useQueryClient();
+  const [isFormOpen, setFormOpen] = useState(false);
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [customerToDelete, setCustomerToDelete] = useState<string | null>(null);
 
-  const { data: customersData, isLoading, error } = useCustomers(1, 10, { search, status: statusFilter });
+  // Server-side state
+  const [search, setSearch] = useState('');
+  const debouncedSearch = useDebounce(search, 300);
+  const [{ pageIndex, pageSize }, setPagination] = useState<PaginationState>({
+    pageIndex: 0,
+    pageSize: 10,
+  });
+
+  const { data: usersResponse, isLoading, error } = useCustomers(pageIndex + 1, pageSize, { search: debouncedSearch });
   const { data: stats } = useCustomerStats();
 
-  const getSubscriptionColor = (type: string) => {
-    return type === 'premium' ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800'
-  }
+  const deleteMutation = useDeleteCustomer();
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'active':
-        return 'bg-green-100 text-green-800'
-      case 'expired':
-        return 'bg-red-100 text-red-800'
-      case 'suspended':
-        return 'bg-yellow-100 text-yellow-800'
-      default:
-        return 'bg-gray-100 text-gray-800'
-    }
-  }
+  const handleDelete = () => {
+    if (!customerToDelete) return;
+    toast.promise(
+      deleteMutation.mutateAsync(customerToDelete),
+      {
+        loading: 'Deleting customer...',
+        success: () => {
+          setCustomerToDelete(null);
+          setDialogOpen(false);
+          return 'Customer deleted successfully!';
+        },
+        error: 'Failed to delete customer.',
+      }
+    );
+  };
+
+  const columns: ColumnDef<Customer>[] = useMemo(() => [
+    {
+      accessorKey: 'full_name',
+      header: ({ column }) => (
+        <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}>
+          Name
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      ),
+      cell: ({ row }) => <div className="font-medium">{row.getValue('full_name')}</div>
+    },
+    {
+      accessorKey: 'email',
+      header: 'Email',
+    },
+    {
+        accessorKey: 'phone',
+        header: 'Phone',
+    },
+    {
+      accessorKey: 'role',
+      header: 'Role',
+      cell: ({ row }) => <Badge>{row.getValue('role')}</Badge>
+    },
+    {
+      accessorKey: 'is_active',
+      header: 'Status',
+      cell: ({ row }) => {
+        const isActive = row.getValue('is_active');
+        return <Badge variant={isActive ? 'default' : 'destructive'}>{isActive ? 'Active' : 'Inactive'}</Badge>;
+      }
+    },
+    {
+      accessorKey: 'created_at',
+      header: 'Joined',
+      cell: ({ row }) => new Date(row.getValue('created_at')).toLocaleDateString(),
+    },
+    {
+      id: 'actions',
+      cell: ({ row }) => {
+        const customer = row.original;
+        return (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="h-8 w-8 p-0"><MoreHorizontal className="h-4 w-4" /></Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>Actions</DropdownMenuLabel>
+              <DropdownMenuItem onClick={() => { setSelectedCustomer(customer); setFormOpen(true); }}>
+                <Pencil className="mr-2 h-4 w-4" />Edit
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem className="text-red-600" onClick={() => { setCustomerToDelete(customer.id); setDialogOpen(true); }}>
+                <Trash2 className="mr-2 h-4 w-4" />Delete
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        );
+      }
+    },
+  ], []);
+
+  const table = useReactTable({
+    data: usersResponse?.data || [],
+    columns,
+    pageCount: usersResponse?.totalPages ?? -1,
+    state: {
+      pagination: { pageIndex, pageSize },
+    },
+    onPaginationChange: setPagination,
+    getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    manualPagination: true,
+    manualFiltering: true,
+  });
+
+  if (error) return <div className="text-red-500 p-4">Error: {error.message}</div>;
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-3xl font-bold text-gray-900">Customer Management</h2>
-          <p className="text-gray-600 mt-2">
-            Manage customer accounts and analyze usage patterns
-          </p>
-        </div>
-        <div className="flex space-x-2">
-          <Button variant="outline">
-            <MessageCircle className="h-4 w-4 mr-2" />
-            Support Tickets
-          </Button>
-          <Button>
-            <Plus className="h-4 w-4 mr-2" />
-            Add Customer
-          </Button>
-        </div>
+    <div className="space-y-4">
+      <PageHeader title="Customer Management" />
+
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <Card><CardContent className="p-4 flex items-center"><Users className="h-6 w-6 mr-4"/><div className='flex flex-col'><p className='text-lg font-bold'>{stats?.totalUsers ?? 'N/A'}</p><p className='text-sm text-gray-500'>Total Users</p></div></CardContent></Card>
+        <Card><CardContent className="p-4 flex items-center"><UserCheck className="h-6 w-6 mr-4"/><div className='flex flex-col'><p className='text-lg font-bold'>{stats?.activeUsers ?? 'N/A'}</p><p className='text-sm text-gray-500'>Active Users</p></div></CardContent></Card>
+        <Card><CardContent className="p-4 flex items-center"><UserPlus className="h-6 w-6 mr-4"/><div className='flex flex-col'><p className='text-lg font-bold'>{stats?.newUsersThisMonth ?? 'N/A'}</p><p className='text-sm text-gray-500'>New This Month</p></div></CardContent></Card>
+        <Card><CardContent className="p-4 flex items-center"><UserX className="h-6 w-6 mr-4"/><div className='flex flex-col'><p className='text-lg font-bold'>{stats?.totalUsers - stats?.activeUsers ?? 'N/A'}</p><p className='text-sm text-gray-500'>Inactive Users</p></div></CardContent></Card>
       </div>
 
-      {/* Summary Cards */}
-      <div className="grid gap-4 md:grid-cols-4">
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center">
-              <Users className="h-8 w-8 text-[#2E7D32]" />
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Total Customers</p>
-                <p className="text-2xl font-bold">{stats?.totalCustomers}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center">
-              <div className="h-8 w-8 bg-green-100 rounded-full flex items-center justify-center">
-                <Users className="h-4 w-4 text-green-600" />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Active</p>
-                <p className="text-2xl font-bold text-green-600">{stats?.activeCustomers}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center">
-              <div className="h-8 w-8 bg-purple-100 rounded-full flex items-center justify-center">
-                <CreditCard className="h-4 w-4 text-purple-600" />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Premium</p>
-                <p className="text-2xl font-bold text-purple-600">{stats?.premiumCustomers}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center">
-              <div className="h-8 w-8 bg-yellow-100 rounded-full flex items-center justify-center">
-                <Award className="h-4 w-4 text-yellow-600" />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Avg. Loyalty Points</p>
-                <p className="text-2xl font-bold text-yellow-600">{stats?.avgLoyaltyPoints}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+      <div className="flex justify-between items-center">
+        <Input
+          placeholder="Search by name, email, or phone..."
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          className="max-w-sm"
+        />
+        <Button onClick={() => { setSelectedCustomer(null); setFormOpen(true); }} className="bg-green-600 hover:bg-green-700">
+          <PlusCircle className="mr-2 h-4 w-4" />
+          Add Customer
+        </Button>
       </div>
 
-      {/* Filters and Search */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Customer Database</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center space-x-4 mb-6">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <Input
-                placeholder="Search customers by name or email..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-md"
-            >
-              <option value="all">All Status</option>
-              <option value="active">Active</option>
-              <option value="expired">Expired</option>
-              <option value="suspended">Suspended</option>
-            </select>
-            <Button variant="outline">
-              <Filter className="h-4 w-4 mr-2" />
-              More Filters
-            </Button>
-            <Button variant="outline">
-              <Download className="h-4 w-4 mr-2" />
-              Export
-            </Button>
-          </div>
+      <DataTable table={table} columns={columns} isLoading={isLoading} />
 
-          {/* Customers Table */}
-          {isLoading ? (
-            <div>Loading...</div>
-          ) : error ? (
-            <div className="text-red-500">Error loading customers.</div>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Customer</TableHead>
-                  <TableHead>Contact</TableHead>
-                  <TableHead>Subscription</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Total Swaps</TableHead>
-                  <TableHead>Loyalty Points</TableHead>
-                  <TableHead>Total Spent</TableHead>
-                  <TableHead>Last Swap</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {customersData.map((customer: Customer) => (
-                  <TableRow key={customer.id}>
-                    <TableCell>
-                      <div>
-                        <div className="flex items-center">
-                          <div className="font-medium">{customer.name}</div>
-                          {customer.isVerified && (
-                            <div className="ml-2 w-4 h-4 bg-green-100 rounded-full flex items-center justify-center">
-                              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                            </div>
-                          )}
-                        </div>
-                        <div className="text-sm text-gray-500">
-                          Joined {formatDate(customer.registrationDate)}
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div>
-                        <div className="text-sm">{customer.email}</div>
-                        <div className="text-sm text-gray-500">{customer.phone}</div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge className={getSubscriptionColor(customer.subscriptionType)}>
-                        {customer.subscriptionType}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge className={getStatusColor(customer.subscriptionStatus)}>
-                        {customer.subscriptionStatus}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="font-medium">
-                      {customer.totalSwaps}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center">
-                        <Award className="h-4 w-4 mr-1 text-yellow-500" />
-                        {customer.loyaltyPoints}
-                      </div>
-                    </TableCell>
-                    <TableCell className="font-medium">
-                      {formatCurrency(customer.totalSpent)}
-                    </TableCell>
-                    <TableCell>
-                      {formatDate(customer.lastSwapDate)}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center space-x-2">
-                        <Button variant="ghost" size="icon">
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="icon">
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="icon">
-                          <MessageCircle className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
+      {isFormOpen && (
+        <CustomerForm
+          isOpen={isFormOpen}
+          onClose={() => setFormOpen(false)}
+          customer={selectedCustomer}
+        />
+      )}
+
+      <AlertDialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the customer account.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setCustomerToDelete(null)}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className="bg-red-600 hover:bg-red-700">Yes, delete customer</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
-  )
+  );
 }

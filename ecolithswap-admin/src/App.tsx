@@ -12,7 +12,10 @@ import { LoginPage } from './pages/auth/login'
 import { DashboardPage } from './pages/dashboard'
 import { BatteryListPage } from './pages/batteries/battery-list'
 import { MaintenanceListPage } from './pages/batteries/maintenance-list'
+import { BatteryAnalyticsPage } from './pages/batteries/battery-analytics'
 import { StationListPage } from './pages/stations/station-list'
+import { StationMapPage } from './pages/stations/station-map'
+import { AddStationPage } from './pages/stations/add-station'
 import { CustomerListPage } from './pages/customers/customer-list'
 import { TicketListPage } from './pages/customers/ticket-list'
 import { TicketDetailsPage } from './pages/customers/ticket-details'
@@ -83,11 +86,12 @@ function App() {
                       {/* Battery Management */}
                       <Route path="/batteries" element={<BatteryListPage />} />
                       <Route path="/batteries/maintenance" element={<MaintenanceListPage />} />
-                      <Route path="/batteries/analytics" element={<div>Battery Analytics Page</div>} />
+                      <Route path="/batteries/analytics" element={<BatteryAnalyticsPage />} />
                       
                       {/* Station Management */}
                       <Route path="/stations" element={<StationListPage />} />
-                      <Route path="/stations/map" element={<div>Station Map Page</div>} />
+                      <Route path="/stations/add" element={<AddStationPage />} />
+                      <Route path="/stations/map" element={<StationMapPage />} />
                       
                       {/* Customer Management */}
                       <Route path="/customers" element={<CustomerListPage />} />
@@ -95,7 +99,7 @@ function App() {
                       <Route path="/customers/support/:id" element={<TicketDetailsPage />} />
                       
                       {/* Financial */}
-                      <Route path="/financial/*" element={<FinancialOverviewPage />} />
+                      <Route path="/financial" element={<FinancialOverviewPage />} />
                       <Route path="/financial/transactions" element={<TransactionListPage />} />
                       <Route path="/financial/revenue" element={<RevenueReportsPage />} />
                       <Route path="/financial/pricing" element={<PricingManagementPage />} />

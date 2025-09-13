@@ -1,14 +1,14 @@
-
-import React, { useState, useMemo } from "react";
-import { useQueryClient } from "@tanstack/react-query";
+import React, { useState, useMemo } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { 
   ColumnDef,
   getCoreRowModel,
   getPaginationRowModel,
   getFilteredRowModel,
   getSortedRowModel,
-  useReactTable
-} from "@tanstack/react-table";
+  useReactTable,
+  PaginationState,
+} from '@tanstack/react-table';
 import { 
   ArrowUpDown, 
   MoreHorizontal, 
@@ -19,12 +19,13 @@ import {
   ListFilter, 
   Power, 
   Wrench 
-} from "lucide-react";
+} from 'lucide-react';
+import { useDebounce } from '@uidotdev/usehooks';
 
-import { PageHeader } from "../../components/ui/page-header";
-import { DataTable } from "../../components/ui/data-table";
-import { Button } from "../../components/ui/button";
-import { Input } from "../../components/ui/input";
+import { PageHeader } from '../../components/ui/page-header';
+import { DataTable } from '../../components/ui/data-table';
+import { Button } from '../../components/ui/button';
+import { Input } from '../../components/ui/input';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -32,33 +33,42 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "../../components/ui/dropdown-menu";
-import { Badge } from "../../components/ui/badge";
-import { AlertDialog, AlertDialogTrigger } from "../../components/ui/alert-dialog";
-import { useStations, useDeleteStation, useToggleMaintenance, useBulkUpdateStations, useStationStats } from "../../hooks/useStations";
-import { StationForm } from "./station-form.tsx";
-import { StationDetails } from "./station-details.tsx";
-import toast from "react-hot-toast";
-import { Checkbox } from "../../components/ui/checkbox";
-
-interface Station {
-  id: string;
-  name: string;
-  location: string;
-  availableBatteries: number;
-  inUseBatteries: number;
-  status: string;
-  inMaintenance: boolean;
-}
+} from '../../components/ui/dropdown-menu';
+import { Badge } from '../../components/ui/badge';
+import { 
+  AlertDialog, 
+  AlertDialogAction, 
+  AlertDialogCancel, 
+  AlertDialogContent, 
+  AlertDialogDescription, 
+  AlertDialogFooter, 
+  AlertDialogHeader, 
+  AlertDialogTitle, 
+} from '../../components/ui/alert-dialog';
+import { useStations, useDeleteStation, useToggleMaintenance, useBulkUpdateStations, useStationStats } from '../../hooks/useStations';
+import { StationForm } from './station-form';
+import { StationDetails } from './station-details';
+import toast from 'react-hot-toast';
+import { Checkbox } from '../../components/ui/checkbox';
+import { Station } from '../../types';
 
 export function StationListPage() {
   const queryClient = useQueryClient();
-  const [search, setSearch] = useState("");
   const [isFormOpen, setFormOpen] = useState(false);
   const [selectedStation, setSelectedStation] = useState<Station | null>(null);
   const [isDetailsOpen, setDetailsOpen] = useState(false);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [stationToDelete, setStationToDelete] = useState<string | null>(null);
 
-  const { data: stations, isLoading, error } = useStations(1, 10, { search });
+  // Server-side state
+  const [search, setSearch] = useState('');
+  const debouncedSearch = useDebounce(search, 300);
+  const [{ pageIndex, pageSize }, setPagination] = useState<PaginationState>({
+    pageIndex: 0,
+    pageSize: 10,
+  });
+
+  const { data: stationsResponse, isLoading, error } = useStations(pageIndex + 1, pageSize, { search: debouncedSearch });
   const { data: stats } = useStationStats();
 
   const deleteMutation = useDeleteStation();
@@ -67,14 +77,17 @@ export function StationListPage() {
 
   const [rowSelection, setRowSelection] = useState({});
 
-  const handleDelete = (id: string) => {
+  const handleDelete = () => {
+    if (!stationToDelete) return;
     toast.promise(
-      deleteMutation.mutateAsync(id).then(() => {
-        queryClient.invalidateQueries({ queryKey: ['stations'] });
-      }),
+      deleteMutation.mutateAsync(stationToDelete),
       {
         loading: "Deleting station...",
-        success: "Station deleted successfully!",
+        success: () => {
+          setStationToDelete(null);
+          setDialogOpen(false);
+          return "Station deleted successfully!";
+        },
         error: "Failed to delete station.",
       }
     );
@@ -82,9 +95,7 @@ export function StationListPage() {
 
   const handleToggleMaintenance = (id: string, inMaintenance: boolean) => {
     toast.promise(
-      toggleMaintenanceMutation.mutateAsync({ id, maintenance_mode: !inMaintenance }).then(() => {
-        queryClient.invalidateQueries({ queryKey: ['stations'] });
-      }),
+      toggleMaintenanceMutation.mutateAsync({ id, maintenance_mode: !inMaintenance }),
       {
         loading: "Updating maintenance mode...",
         success: "Maintenance mode updated!",
@@ -137,12 +148,13 @@ export function StationListPage() {
         )
     },
     {
-        accessorKey: "location",
-        header: "Location",
+        accessorKey: "address",
+        header: "Address",
+        cell: ({ row }) => <div className="truncate w-48">{row.getValue('address')}</div>,
     },
     {
         accessorKey: "availableBatteries",
-        header: "Available Batteries",
+        header: "Available",
     },
     {
         accessorKey: "inUseBatteries",
@@ -152,12 +164,14 @@ export function StationListPage() {
         accessorKey: "status",
         header: "Status",
         cell: ({ row }) => {
-            const status = row.getValue("status");
+            const { status, in_maintenance } = row.original;
+            if (in_maintenance) {
+              return <Badge className="bg-yellow-500 text-white">Maintenance</Badge>;
+            }
             let color = "";
             switch (status) {
                 case "Active": color = "bg-green-500"; break;
                 case "Inactive": color = "bg-gray-500"; break;
-                case "Maintenance": color = "bg-yellow-500"; break;
                 default: color = "bg-gray-300";
             }
             return <Badge className={`${color} text-white`}>{status}</Badge>;
@@ -184,17 +198,21 @@ export function StationListPage() {
                             <Pencil className="mr-2 h-4 w-4" />
                             Edit
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleToggleMaintenance(station.id, station.inMaintenance)}>
+                        <DropdownMenuItem onClick={() => handleToggleMaintenance(station.id, station.in_maintenance)}>
                           <Wrench className="mr-2 h-4 w-4" />
-                          {station.inMaintenance ? "Disable Maintenance" : "Enable Maintenance"}
+                          {station.in_maintenance ? "Exit Maintenance" : "Enter Maintenance"}
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
-                        <AlertDialogTrigger asChild>
-                          <DropdownMenuItem className="text-red-600">
+                          <DropdownMenuItem 
+                            className="text-red-600" 
+                            onClick={() => {
+                              setStationToDelete(station.id);
+                              setDialogOpen(true);
+                            }}
+                          >
                               <Trash2 className="mr-2 h-4 w-4" />
                               Delete
                           </DropdownMenuItem>
-                        </AlertDialogTrigger>
                     </DropdownMenuContent>
                 </DropdownMenu>
             );
@@ -202,18 +220,19 @@ export function StationListPage() {
     }], [queryClient]);
 
   const table = useReactTable({
-    data: stations?.data.data || [],
+    data: stationsResponse?.data || [],
     columns,
-    getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    getSortedRowModel: getSortedRowModel(),
+    pageCount: stationsResponse?.totalPages ?? -1,
     state: {
-      globalFilter: search,
+      pagination: { pageIndex, pageSize },
       rowSelection,
     },
-    onGlobalFilterChange: setSearch,
+    onPaginationChange: setPagination,
     onRowSelectionChange: setRowSelection,
+    getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    manualPagination: true,
+    manualFiltering: true,
   });
 
   const selectedRows = table.getFilteredSelectedRowModel().rows;
@@ -222,10 +241,7 @@ export function StationListPage() {
     if (selectedRows.length === 0) return;
     const stationIds = selectedRows.map(row => row.original.id);
     toast.promise(
-      bulkUpdateMutation.mutateAsync({ station_ids: stationIds, update_data: { is_active: false } }).then(() => {
-        queryClient.invalidateQueries({ queryKey: ['stations'] });
-        setRowSelection({});
-      }),
+      bulkUpdateMutation.mutateAsync({ station_ids: stationIds, update_data: { status: 'Inactive' } }),
       {
         loading: "Disabling stations...",
         success: "Stations disabled successfully!",
@@ -238,10 +254,7 @@ export function StationListPage() {
     if (selectedRows.length === 0) return;
     const stationIds = selectedRows.map(row => row.original.id);
     toast.promise(
-      Promise.all(stationIds.map(id => deleteMutation.mutateAsync(id))).then(() => {
-        queryClient.invalidateQueries({ queryKey: ['stations'] });
-        setRowSelection({});
-      }),
+      Promise.all(stationIds.map(id => deleteMutation.mutateAsync(id))),
       {
         loading: "Deleting stations...",
         success: "Stations deleted successfully!",
@@ -251,23 +264,23 @@ export function StationListPage() {
   };
 
 
-  if (error) return <div className="text-red-500">Error loading stations. Please try again.</div>;
+  if (error) return <div className="text-red-500 p-4">Error loading stations: {error.message}</div>;
   
   return (
       <div className="space-y-4">
-        <PageHeader title="Charging Stations" />
+        <PageHeader title="Charging Stations Management" />
 
-        <div className="grid gap-4 md:grid-cols-4">
-            <div className="p-4 border rounded-lg">Total Stations: {stats?.total_stations}</div>
-            <div className="p-4 border rounded-lg">Active Stations: {stats?.active_stations}</div>
-            <div className="p-4 border rounded-lg">Under Maintenance: {stats?.maintenance_stations}</div>
-            <div className="p-4 border rounded-lg">Accepts Plastic: {stats?.plastic_accepting_stations}</div>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <div className="p-4 border rounded-lg">Total Stations: {stats?.total_stations ?? 'N/A'}</div>
+            <div className="p-4 border rounded-lg">Active Stations: {stats?.active_stations ?? 'N/A'}</div>
+            <div className="p-4 border rounded-lg">Under Maintenance: {stats?.maintenance_stations ?? 'N/A'}</div>
+            <div className="p-4 border rounded-lg">Accepts Plastic: {stats?.plastic_accepting_stations ?? 'N/A'}</div>
         </div>
 
         <div className="flex justify-between items-center">
             <div className="flex-1">
                 <Input 
-                    placeholder="Search stations..."
+                    placeholder="Search by name or address..."
                     value={search}
                     onChange={e => setSearch(e.target.value)}
                     className="max-w-sm"
@@ -292,7 +305,7 @@ export function StationListPage() {
                 <Button onClick={() => {
                     setSelectedStation(null);
                     setFormOpen(true);
-                }}>
+                }} className="bg-green-600 hover:bg-green-700">
                     <PlusCircle className="mr-2 h-4 w-4" />
                     Add Station
                 </Button>
@@ -300,28 +313,24 @@ export function StationListPage() {
         </div>
 
         {selectedRows.length > 0 && (
-          <div className="flex items-center justify-between p-2 bg-gray-100 rounded-md">
+          <div className="flex items-center justify-between p-2 bg-gray-100 dark:bg-gray-800 rounded-md">
             <div className="text-sm font-medium">
               {selectedRows.length} of {table.getCoreRowModel().rows.length} row(s) selected.
             </div>
-            <div>
-              <Button variant="outline" size="sm" className="mr-2" onClick={handleBulkDisable}>
+            <div className="space-x-2">
+              <Button variant="outline" size="sm" onClick={handleBulkDisable}>
                 <Power className="mr-2 h-4 w-4" />
-                Disable
+                Disable ({selectedRows.length})
               </Button>
               <Button variant="destructive" size="sm" onClick={handleBulkDelete}>
                 <Trash2 className="mr-2 h-4 w-4" />
-                Delete
+                Delete ({selectedRows.length})
               </Button>
             </div>
           </div>
         )}
 
-        {isLoading ? (
-          <div>Loading...</div>
-        ) : (
-          <DataTable table={table} columns={columns} />
-        )}
+        <DataTable table={table} columns={columns} isLoading={isLoading} />
 
         <StationForm 
           isOpen={isFormOpen} 
@@ -336,6 +345,24 @@ export function StationListPage() {
             onClose={() => setDetailsOpen(false)}
           />
         )}
+
+        <AlertDialog open={dialogOpen} onOpenChange={setDialogOpen}>
+          <AlertDialogContent>
+              <AlertDialogHeader>
+                  <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                      This action cannot be undone. This will permanently delete the station and all associated data.
+                  </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                  <AlertDialogCancel onClick={() => setStationToDelete(null)}>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleDelete} className="bg-red-600 hover:bg-red-700">
+                      Yes, delete station
+                  </AlertDialogAction>
+              </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
       </div>
   );
 }
