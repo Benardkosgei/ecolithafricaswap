@@ -20,9 +20,10 @@ const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/users');
 const stationRoutes = require('./routes/stations');
 const batteryRoutes = require('./routes/batteries');
-const wasteRoutes = require('./routes/waste'); // Added waste routes
+const wasteRoutes = require('./routes/waste');
 const adminRoutes = require('./routes/admin');
 const supportRoutes = require('./routes/support');
+const fileUploadRoutes = require('./routes/fileUpload');
 const errorHandler = require('./middleware/errorHandler');
 
 const app = express();
@@ -75,6 +76,7 @@ app.use('/api/batteries', batteryRoutes);
 app.use('/api/waste', wasteRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/support', supportRoutes);
+app.use('/api/files', fileUploadRoutes);
 
 
 // WebSocket connection handling

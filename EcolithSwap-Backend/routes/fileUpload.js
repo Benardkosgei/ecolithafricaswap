@@ -1,205 +1,62 @@
 const express = require('express');
+const multer = require('multer');
 const path = require('path');
-const fs = require('fs');
 const { authenticateToken } = require('../middleware/auth');
-const { 
-  wasteImageUpload, 
-  stationImageUpload, 
-  batteryImageUpload, 
-  profileImageUpload,
-  handleUploadError,
-  cleanupOnError
-} = require('../middleware/fileUpload');
+const db = require('../config/database');
 
 const router = express.Router();
 
-// Serve uploaded files
-router.use('/uploads', express.static('uploads'));
-
-// Upload waste submission photos
-router.post('/waste-photos', 
-  authenticateToken,
-  cleanupOnError,
-  wasteImageUpload.array('photos', 5),
-  handleUploadError,
-  async (req, res) => {
-    try {
-      if (!req.files || req.files.length === 0) {
-        return res.status(400).json({ error: 'No files uploaded' });
-      }
-
-      const uploadedFiles = req.files.map(file => ({
-        filename: file.filename,
-        originalName: file.originalname,
-        size: file.size,
-        url: `/uploads/waste/${file.filename}`
-      }));
-
-      res.json({
-        message: 'Files uploaded successfully',
-        files: uploadedFiles
-      });
-
-    } catch (error) {
-      console.error('Waste photo upload error:', error);
-      res.status(500).json({ error: 'Failed to upload photos' });
+// Configure multer for file uploads
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    let uploadPath = 'uploads/';
+    if (file.fieldname === 'avatar') {
+      uploadPath += 'avatars/';
+    } else if (file.fieldname === 'station') {
+      uploadPath += 'stations/';
+    } else if (file.fieldname === 'battery') {
+      uploadPath += 'batteries/';
     }
-  }
-);
-
-// Upload station image
-router.post('/station-image', 
-  authenticateToken,
-  cleanupOnError,
-  stationImageUpload.single('image'),
-  handleUploadError,
-  async (req, res) => {
-    try {
-      if (!req.file) {
-        return res.status(400).json({ error: 'No file uploaded' });
-      }
-
-      const uploadedFile = {
-        filename: req.file.filename,
-        originalName: req.file.originalname,
-        size: req.file.size,
-        url: `/uploads/stations/${req.file.filename}`
-      };
-
-      res.json({
-        message: 'File uploaded successfully',
-        file: uploadedFile
-      });
-
-    } catch (error) {
-      console.error('Station image upload error:', error);
-      res.status(500).json({ error: 'Failed to upload image' });
-    }
-  }
-);
-
-// Upload battery image
-router.post('/battery-image', 
-  authenticateToken,
-  cleanupOnError,
-  batteryImageUpload.single('image'),
-  handleUploadError,
-  async (req, res) => {
-    try {
-      if (!req.file) {
-        return res.status(400).json({ error: 'No file uploaded' });
-      }
-
-      const uploadedFile = {
-        filename: req.file.filename,
-        originalName: req.file.originalname,
-        size: req.file.size,
-        url: `/uploads/batteries/${req.file.filename}`
-      };
-
-      res.json({
-        message: 'File uploaded successfully',
-        file: uploadedFile
-      });
-
-    } catch (error) {
-      console.error('Battery image upload error:', error);
-      res.status(500).json({ error: 'Failed to upload image' });
-    }
-  }
-);
-
-// Upload profile avatar
-router.post('/profile-avatar', 
-  authenticateToken,
-  cleanupOnError,
-  profileImageUpload.single('avatar'),
-  handleUploadError,
-  async (req, res) => {
-    try {
-      if (!req.file) {
-        return res.status(400).json({ error: 'No file uploaded' });
-      }
-
-      const uploadedFile = {
-        filename: req.file.filename,
-        originalName: req.file.originalname,
-        size: req.file.size,
-        url: `/uploads/profiles/${req.file.filename}`
-      };
-
-      res.json({
-        message: 'File uploaded successfully',
-        file: uploadedFile
-      });
-
-    } catch (error) {
-      console.error('Profile avatar upload error:', error);
-      res.status(500).json({ error: 'Failed to upload avatar' });
-    }
-  }
-);
-
-// Delete uploaded file
-router.delete('/delete/:category/:filename', authenticateToken, async (req, res) => {
-  try {
-    const { category, filename } = req.params;
-    
-    const allowedCategories = ['waste', 'stations', 'batteries', 'profiles'];
-    if (!allowedCategories.includes(category)) {
-      return res.status(400).json({ error: 'Invalid file category' });
-    }
-
-    const filePath = path.join('uploads', category, filename);
-    
-    if (!fs.existsSync(filePath)) {
-      return res.status(404).json({ error: 'File not found' });
-    }
-
-    // Security check: ensure filename doesn't contain path traversal
-    if (filename.includes('..') || filename.includes('/') || filename.includes('\\')) {
-      return res.status(400).json({ error: 'Invalid filename' });
-    }
-
-    fs.unlinkSync(filePath);
-
-    res.json({ message: 'File deleted successfully' });
-
-  } catch (error) {
-    console.error('File deletion error:', error);
-    res.status(500).json({ error: 'Failed to delete file' });
+    cb(null, uploadPath);
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
   }
 });
 
-// Get file info
-router.get('/info/:category/:filename', async (req, res) => {
+const upload = multer({ 
+  storage: storage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only image files are allowed'), false);
+    }
+  }
+});
+
+// Upload profile avatar
+router.post('/profile-avatar', authenticateToken, upload.single('avatar'), async (req, res) => {
   try {
-    const { category, filename } = req.params;
-    
-    const allowedCategories = ['waste', 'stations', 'batteries', 'profiles'];
-    if (!allowedCategories.includes(category)) {
-      return res.status(400).json({ error: 'Invalid file category' });
+    if (!req.file) {
+      return res.status(400).json({ error: 'No file uploaded' });
     }
 
-    const filePath = path.join('uploads', category, filename);
-    
-    if (!fs.existsSync(filePath)) {
-      return res.status(404).json({ error: 'File not found' });
-    }
+    const userId = req.user.userId;
+    const avatarUrl = `/uploads/avatars/${req.file.filename}`;
 
-    const stats = fs.statSync(filePath);
-    
-    res.json({
-      filename,
-      size: stats.size,
-      created: stats.birthtime,
-      modified: stats.mtime,
-      url: `/uploads/${category}/${filename}`
+    await db('users').where({ id: userId }).update({ avatar_url: avatarUrl });
+
+    res.json({ 
+      message: 'Avatar updated successfully',
+      avatar_url: avatarUrl
     });
 
   } catch (error) {
-    console.error('Get file info error:', error);
-    res.status(500).json({ error: 'Failed to get file info' });
+    console.error('Avatar upload error:', error);
+    res.status(500).json({ error: 'Failed to upload avatar' });
   }
 });
 

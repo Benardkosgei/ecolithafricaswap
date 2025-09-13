@@ -34,8 +34,6 @@ const upload = multer({
 router.get('/', async (req, res) => {
   try {
     const { 
-      page = 1, 
-      limit = 10, 
       search = '', 
       station_type = '',
       is_active = '',
@@ -44,6 +42,9 @@ router.get('/', async (req, res) => {
       sort_by = 'created_at',
       sort_order = 'desc'
     } = req.query;
+
+    const page = parseInt(req.query.page) > 0 ? parseInt(req.query.page) : 1;
+    const limit = parseInt(req.query.limit) > 0 ? parseInt(req.query.limit) : 10;
     
     const offset = (page - 1) * limit;
 
@@ -86,7 +87,7 @@ router.get('/', async (req, res) => {
       query = query.where('stations.maintenance_mode', maintenance_mode === 'true');
     }
 
-    const stations = await query.limit(parseInt(limit)).offset(offset);
+    const stations = await query.limit(limit).offset(offset);
     
     // Get total count for pagination
     let countQuery = db('stations');
@@ -104,8 +105,8 @@ router.get('/', async (req, res) => {
     res.json({
       stations,
       pagination: {
-        page: parseInt(page),
-        limit: parseInt(limit),
+        page: page,
+        limit: limit,
         total: totalCount.count,
         totalPages: Math.ceil(totalCount.count / limit)
       }
@@ -419,7 +420,7 @@ router.delete('/:id', requireAdmin, async (req, res) => {
 });
 
 // Get station statistics
-router.get('/stats/overview', async (req, res) => {
+router.get('/stats', async (req, res) => {
   try {
     const stats = await Promise.all([
       db('stations').count('id as count').first(),
