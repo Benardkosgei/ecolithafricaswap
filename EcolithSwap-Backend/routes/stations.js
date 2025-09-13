@@ -420,6 +420,35 @@ router.delete('/:id', requireAdmin, async (req, res) => {
 });
 
 // Get station statistics
+router.get('/stats', requireAdminOrManager, async (req, res) => {
+  try {
+    const stats = await Promise.all([
+      db('stations').count('id as count').first(),
+      db('stations').where('is_active', true).count('id as count').first(),
+      db('stations').where('maintenance_mode', true).count('id as count').first(),
+      db('stations').where('station_type', 'swap').count('id as count').first(),
+      db('stations').where('station_type', 'charge').count('id as count').first(),
+      db('stations').where('station_type', 'both').count('id as count').first(),
+      db('stations').where('accepts_plastic', true).count('id as count').first()
+    ]);
+
+    res.json({
+      totalStations: stats[0].count,
+      activeStations: stats[1].count,
+      maintenanceStations: stats[2].count,
+      swapStations: stats[3].count,
+      chargeStations: stats[4].count,
+      bothTypeStations: stats[5].count,
+      plasticAcceptingStations: stats[6].count
+    });
+
+  } catch (error) {
+    console.error('Get station stats error:', error);
+    res.status(500).json({ error: 'Failed to fetch station statistics' });
+  }
+});
+
+// Get station statistics
 router.get('/stats/overview', requireAdminOrManager, async (req, res) => {
   try {
     const stats = await Promise.all([
