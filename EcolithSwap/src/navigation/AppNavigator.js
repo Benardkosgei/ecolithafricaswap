@@ -8,7 +8,7 @@ import HomeScreen from '../screens/HomeScreen';
 import StationFinderScreen from '../screens/StationFinderScreen';
 import QRScannerScreen from '../screens/QRScannerScreen';
 import StationDetailScreen from '../screens/StationDetailScreen';
-import PaymentScreen from '../screens/PaymentScreen';
+
 
 // Enhanced CRUD Screens
 import ProfileScreen from '../screens/ProfileScreen';
@@ -45,7 +45,7 @@ function HomeStackNavigator() {
       />
       <Stack.Screen 
         name="Payment" 
-        component={PaymentScreen} 
+        component={PaymentManagementScreen} 
         options={{ title: 'Payment' }}
       />
     </Stack.Navigator>
