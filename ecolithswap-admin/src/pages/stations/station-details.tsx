@@ -136,7 +136,7 @@ export function StationDetails({ stationId, isOpen, onClose }: StationDetailsPro
                     <TableCell colSpan={4} className="text-center">No recent rentals from this station.</TableCell>
                   </TableRow>
                 )}
-              </Body>
+              </TableBody>
             </Table>
           </CardContent>
         </Card>
