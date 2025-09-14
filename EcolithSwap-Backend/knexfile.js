@@ -12,7 +12,7 @@ module.exports = {
       password: process.env.DB_PASSWORD || '',
       database: process.env.DB_NAME || 'ecolithswap',
       charset: 'utf8mb4',
-      timezone: 'UTC'
+      timezone: 'z'
     },
     useNullAsDefault: true,
     migrations: {
