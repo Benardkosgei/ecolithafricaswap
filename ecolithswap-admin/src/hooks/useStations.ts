@@ -1,6 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { api } from '../lib/api';
-import { Station } from '../types';
+import { api, Station } from '../lib/api';
 
 //================================================================================
 // Stations Hooks
@@ -53,10 +52,12 @@ export const useCreateStation = () => {
 export const useUpdateStation = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: FormData }) => 
-      api.post(`/stations/${id}`, data, { 
+    mutationFn: ({ id, data }: { id: string; data: FormData }) => {
+      data.append('_method', 'PUT');
+      return api.post(`/stations/${id}`, data, { 
         headers: { 'Content-Type': 'multipart/form-data' },
-      }),
+      });
+    },
     onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['stations'] });
       queryClient.invalidateQueries({ queryKey: ['station', variables.id] });

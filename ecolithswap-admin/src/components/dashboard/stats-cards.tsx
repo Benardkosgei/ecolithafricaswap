@@ -3,8 +3,7 @@ import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { formatNumber, formatCurrency } from '../../lib/utils';
-import { adminAPI } from '../../lib/api';
-import { DashboardStats } from '../../types';
+import { adminAPI, DashboardStats } from '../../lib/api';
 import {
   Users,
   Battery,

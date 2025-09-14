@@ -1,6 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { api } from '../lib/api';
-import { Battery, BatteryStats } from '../../types/battery';
+import { api, Battery, BatteryStats } from '../lib/api';
 
 interface BatteryFilters {
   search?: string;

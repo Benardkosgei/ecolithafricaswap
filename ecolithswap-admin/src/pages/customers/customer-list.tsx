@@ -47,8 +47,9 @@ import {
 } from '../../components/ui/alert-dialog';
 import { useCustomers, useDeleteCustomer, useCustomerStats } from '../../hooks/useCustomers';
 import { CustomerForm } from './customer-form';
-import { Customer } from '../../types/customer';
+import { Customer } from '../../lib/api';
 import toast from 'react-hot-toast';
+import { Card, CardContent } from '../../components/ui/card';
 
 export function CustomerListPage() {
   const queryClient = useQueryClient();
@@ -85,6 +86,13 @@ export function CustomerListPage() {
       }
     );
   };
+  
+  const inactiveUsers = useMemo(() => {
+    if (stats?.totalUsers && stats?.activeUsers) {
+      return stats.totalUsers - stats.activeUsers;
+    } 
+    return 'N/A';
+  }, [stats]);
 
   const columns: ColumnDef<Customer>[] = useMemo(() => [
     {
@@ -172,7 +180,7 @@ export function CustomerListPage() {
         <Card><CardContent className="p-4 flex items-center"><Users className="h-6 w-6 mr-4"/><div className='flex flex-col'><p className='text-lg font-bold'>{stats?.totalUsers ?? 'N/A'}</p><p className='text-sm text-gray-500'>Total Users</p></div></CardContent></Card>
         <Card><CardContent className="p-4 flex items-center"><UserCheck className="h-6 w-6 mr-4"/><div className='flex flex-col'><p className='text-lg font-bold'>{stats?.activeUsers ?? 'N/A'}</p><p className='text-sm text-gray-500'>Active Users</p></div></CardContent></Card>
         <Card><CardContent className="p-4 flex items-center"><UserPlus className="h-6 w-6 mr-4"/><div className='flex flex-col'><p className='text-lg font-bold'>{stats?.newUsersThisMonth ?? 'N/A'}</p><p className='text-sm text-gray-500'>New This Month</p></div></CardContent></Card>
-        <Card><CardContent className="p-4 flex items-center"><UserX className="h-6 w-6 mr-4"/><div className='flex flex-col'><p className='text-lg font-bold'>{stats?.totalUsers - stats?.activeUsers ?? 'N/A'}</p><p className='text-sm text-gray-500'>Inactive Users</p></div></CardContent></Card>
+        <Card><CardContent className="p-4 flex items-center"><UserX className="h-6 w-6 mr-4"/><div className='flex flex-col'><p className='text-lg font-bold'>{inactiveUsers}</p><p className='text-sm text-gray-500'>Inactive Users</p></div></CardContent></Card>
       </div>
 
       <div className="flex justify-between items-center">
@@ -204,7 +212,7 @@ export function CustomerListPage() {
             <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
             <AlertDialogDescription>
               This action cannot be undone. This will permanently delete the customer account.
-            </AlertDialogDescription>
+            </-AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => setCustomerToDelete(null)}>Cancel</AlertDialogCancel>

@@ -4,8 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Badge } from '../ui/badge';
 import { formatDate } from '../../lib/utils';
-import { adminAPI } from '../../lib/api';
-import { ActivityItem } from '../../types';
+import { adminAPI, ActivityItem } from '../../lib/api';
 import { Activity, Battery, Users, MapPin, AlertTriangle } from 'lucide-react';
 
 const activityIcons = {

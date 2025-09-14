@@ -10,6 +10,7 @@ import { AppLayout } from './components/layout/app-layout'
 // Page Imports
 import { LoginPage } from './pages/auth/login'
 import { DashboardPage } from './pages/dashboard'
+import { NotificationListPage } from './pages/notifications/notifications'
 import { BatteryListPage } from './pages/batteries/battery-list'
 import { MaintenanceListPage } from './pages/batteries/maintenance-list'
 import { BatteryAnalyticsPage } from './pages/batteries/battery-analytics'
@@ -82,6 +83,7 @@ function App() {
                   <AppLayout title="Dashboard">
                     <Routes>
                       <Route path="/" element={<DashboardPage />} />
+                      <Route path="/notifications" element={<NotificationListPage />} />
                       
                       {/* Battery Management */}
                       <Route path="/batteries" element={<BatteryListPage />} />

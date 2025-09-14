@@ -27,15 +27,7 @@ import {
 } from "../../components/ui/dropdown-menu";
 import { Badge } from "../../components/ui/badge";
 import { useRentals } from "../../hooks/useRentals";
-
-interface Rental {
-  id: string;
-  userName: string;
-  batteryCode: string;
-  startTime: string;
-  endTime: string | null;
-  status: string;
-}
+import { Rental } from "../../lib/api";
 
 export function RentalListPage() {
   const [search, setSearch] = useState("");
@@ -79,7 +71,7 @@ export function RentalListPage() {
   ], []);
 
   const table = useReactTable({
-    data: rentals?.data.data || [],
+    data: rentals?.data || [],
     columns,
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
