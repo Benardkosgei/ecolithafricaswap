@@ -41,6 +41,25 @@ const getRecentActivities = (limit: number) => api.get('/dashboard/activities', 
 const getSystemHealth = () => api.get('/system/health');
 const exportData = (reportType: string, params: object) => 
   api.get(`/reports/${reportType}`, { params, responseType: 'blob' });
+const getUsageAnalytics = (period: string) => api.get('/admin/usage-analytics', { params: { period } });
+
+
+// Batteries
+const getBatteries = (params: object) => api.get('/batteries', { params });
+const getBattery = (id: string) => api.get(`/batteries/${id}`);
+const createBattery = (data: object) => api.post('/batteries', data);
+const updateBattery = (id: string, data: object) => api.put(`/batteries/${id}`, data);
+const deleteBattery = (id: string) => api.delete(`/batteries/${id}`);
+const getBatteryStats = () => api.get('/batteries/stats');
+
+// Stations
+const getStations = (params: object) => api.get('/stations', { params });
+const getStation = (id: string) => api.get(`/stations/${id}`);
+const createStation = (data: object) => api.post('/stations', data);
+const updateStation = (id: string, data: object) => api.put(`/stations/${id}`, data);
+const deleteStation = (id: string) => api.delete(`/stations/${id}`);
+const getStationStatsOverview = () => api.get('/stations/stats/overview');
+
 
 // API Exports
 export const authAPI = { login, getProfile };
@@ -62,7 +81,27 @@ export const adminAPI = {
   getRecentActivities,
   getSystemHealth,
   exportData,
+  getUsageAnalytics,
 };
+
+export const batteriesAPI = {
+    getBatteries,
+    getBattery,
+    createBattery,
+    updateBattery,
+    deleteBattery,
+    getBatteryStats,
+};
+
+export const stationsAPI = {
+    getStations,
+    getStation,
+    createStation,
+    updateStation,
+    deleteStation,
+    getStationStatsOverview,
+};
+
 
 // Schemas & Types
 export const CustomerSchema = z.object({
