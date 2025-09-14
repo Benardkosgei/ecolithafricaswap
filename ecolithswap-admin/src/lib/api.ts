@@ -145,6 +145,12 @@ export const analyticsAPI = {
     getUsageAnalytics: getUsageAnalyticsByDate
 };
 
+export const usersAPI = {
+  getUsers: () => getUsers({}),
+  createUser: (email: string, role: 'VIEWER' | 'MANAGER' | 'ADMIN') => createUser({ email, role }),
+  deleteUser,
+};
+
 
 // Schemas & Types
 export const CustomerSchema = z.object({
