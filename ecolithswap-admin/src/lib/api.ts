@@ -68,6 +68,12 @@ const updateTicket = (id: string, data: object) => api.put(`/support/tickets/${i
 const getTicketMessages = (ticketId: string) => api.get(`/support/tickets/${ticketId}/messages`);
 const addTicketMessage = (ticketId: string, data: object) => api.post(`/support/tickets/${ticketId}/messages`, data);
 
+// Rentals
+const getRentals = (params: object) => api.get('/rentals', { params });
+
+// Payments
+const getPayments = (params: object) => api.get('/payments', { params });
+
 
 // API Exports
 export { api };
@@ -119,6 +125,9 @@ export const supportAPI = {
   getTicketMessages,
   addTicketMessage
 };
+
+export const rentalsAPI = { getRentals };
+export const paymentsAPI = { getPayments };
 
 
 // Schemas & Types
