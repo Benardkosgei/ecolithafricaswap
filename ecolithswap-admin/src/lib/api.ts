@@ -74,6 +74,10 @@ const getRentals = (params: object) => api.get('/rentals', { params });
 // Payments
 const getPayments = (params: object) => api.get('/payments', { params });
 
+// Environmental
+const getWasteSubmissions = () => api.get('/environmental/waste-submissions');
+const updateSubmissionStatus = (id: string, status: string) => api.patch(`/environmental/waste-submissions/${id}`, { status });
+
 
 // API Exports
 export { api };
@@ -128,6 +132,11 @@ export const supportAPI = {
 
 export const rentalsAPI = { getRentals };
 export const paymentsAPI = { getPayments };
+
+export const environmentalAPI = {
+  getWasteSubmissions,
+  updateSubmissionStatus,
+};
 
 
 // Schemas & Types
