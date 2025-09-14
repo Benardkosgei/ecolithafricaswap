@@ -78,6 +78,9 @@ const getPayments = (params: object) => api.get('/payments', { params });
 const getWasteSubmissions = () => api.get('/environmental/waste-submissions');
 const updateSubmissionStatus = (id: string, status: string) => api.patch(`/environmental/waste-submissions/${id}`, { status });
 
+// Analytics
+const getUsageAnalyticsByDate = (from: Date, to: Date) => api.get('/analytics/usage-by-date', { params: { from, to }});
+
 
 // API Exports
 export { api };
@@ -136,6 +139,10 @@ export const paymentsAPI = { getPayments };
 export const environmentalAPI = {
   getWasteSubmissions,
   updateSubmissionStatus,
+};
+
+export const analyticsAPI = {
+    getUsageAnalytics: getUsageAnalyticsByDate
 };
 
 
