@@ -23,7 +23,10 @@ const Switch = React.forwardRef<(
       )}
     />
   </SwitchPrimitives.Root>
-))
-Switch.displayName = SwitchPrimitives.Root.displayName
+));
+
+if (SwitchPrimitives.Root.displayName) {
+  Switch.displayName = SwitchPrimitives.Root.displayName;
+}
 
 export { Switch }
