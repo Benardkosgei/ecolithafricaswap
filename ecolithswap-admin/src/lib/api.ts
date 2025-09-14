@@ -34,6 +34,10 @@ const getCustomers = (page: number, limit: number, filters: object) =>
 // System Settings
 const getSystemSettings = () => api.get('/settings');
 const updateSystemSettings = (data: object) => api.put('/settings', data);
+const getApiKeys = () => api.get('/settings/api-keys');
+const createApiKey = (data: object) => api.post('/settings/api-keys', data);
+const deleteApiKey = (id: string) => api.delete(`/settings/api-keys/${id}`);
+
 
 // Dashboard / Admin
 const getDashboardStats = () => api.get('/dashboard/stats');
@@ -149,6 +153,12 @@ export const usersAPI = {
   getUsers: () => getUsers({}),
   createUser: (email: string, role: 'VIEWER' | 'MANAGER' | 'ADMIN') => createUser({ email, role }),
   deleteUser,
+};
+
+export const settingsAPI = {
+  getApiKeys,
+  createApiKey,
+  deleteApiKey,
 };
 
 
