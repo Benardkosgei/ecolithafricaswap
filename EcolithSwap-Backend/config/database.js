@@ -6,7 +6,7 @@ const env = process.env.NODE_ENV || 'development';
 require('dotenv').config({ path: path.resolve(process.cwd(), `.env.${env}`) });
 
 const dbConfig = {
-  client: process.env.DB_CLIENT || 'mysql',
+  client: 'mysql2',
   connection: {
     host: process.env.DB_HOST,
     port: process.env.DB_PORT || 3306,
