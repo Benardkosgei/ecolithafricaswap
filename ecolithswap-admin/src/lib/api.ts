@@ -60,6 +60,14 @@ const updateStation = (id: string, data: object) => api.put(`/stations/${id}`, d
 const deleteStation = (id: string) => api.delete(`/stations/${id}`);
 const getStationStatsOverview = () => api.get('/stations/stats/overview');
 
+// Support
+const getTickets = (params: object) => api.get('/support/tickets', { params });
+const getTicket = (id: string) => api.get(`/support/tickets/${id}`);
+const createTicket = (data: object) => api.post('/support/tickets', data);
+const updateTicket = (id: string, data: object) => api.put(`/support/tickets/${id}`, data);
+const getTicketMessages = (ticketId: string) => api.get(`/support/tickets/${ticketId}/messages`);
+const addTicketMessage = (ticketId: string, data: object) => api.post(`/support/tickets/${ticketId}/messages`, data);
+
 
 // API Exports
 export { api };
@@ -103,6 +111,15 @@ export const stationsAPI = {
     getStationStatsOverview,
 };
 
+export const supportAPI = {
+  getTickets,
+  getTicket,
+  createTicket,
+  updateTicket,
+  getTicketMessages,
+  addTicketMessage
+};
+
 
 // Schemas & Types
 export const CustomerSchema = z.object({
@@ -138,4 +155,23 @@ export interface Rental {
   startTime: string;
   endTime: string | null;
   status: string;
+}
+
+export interface SupportTicket {
+  id: string;
+  subject: string;
+  user: { name: string; };
+  status: string;
+  priority: string;
+  updatedAt: string;
+}
+
+export interface PaginationResponse<T> {
+  data: T[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
 }
