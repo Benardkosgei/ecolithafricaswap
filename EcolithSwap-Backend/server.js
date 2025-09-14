@@ -25,6 +25,7 @@ const wasteRoutes = require('./routes/waste');
 const adminRoutes = require('./routes/admin');
 const supportRoutes = require('./routes/support');
 const fileUploadRoutes = require('./routes/fileUpload');
+const dashboardRoutes = require('./routes/dashboard');
 const errorHandler = require('./middleware/errorHandler');
 
 const app = express();
@@ -79,6 +80,7 @@ app.use('/api/waste', wasteRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/support', supportRoutes);
 app.use('/api/files', fileUploadRoutes);
+app.use('/api/dashboard', dashboardRoutes);
 
 
 // WebSocket connection handling
