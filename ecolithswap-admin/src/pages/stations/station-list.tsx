@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { 
   ColumnDef,
@@ -93,7 +93,7 @@ export function StationListPage() {
     );
   };
 
-  const handleToggleMaintenance = (id: string, inMaintenance: boolean) => {
+  const handleToggleMaintenance = useCallback((id: string, inMaintenance: boolean) => {
     toast.promise(
       toggleMaintenanceMutation.mutateAsync({ id, maintenance_mode: !inMaintenance }),
       {
@@ -102,7 +102,7 @@ export function StationListPage() {
         error: "Failed to update maintenance mode.",
       }
     );
-  };
+  }, [toggleMaintenanceMutation]);
   
   const columns: ColumnDef<Station>[] = useMemo(() => [
     {
@@ -217,7 +217,7 @@ export function StationListPage() {
                 </DropdownMenu>
             );
         }
-    }], [queryClient]);
+    }], [handleToggleMaintenance]);
 
   const table = useReactTable({
     data: stationsResponse?.data || [],

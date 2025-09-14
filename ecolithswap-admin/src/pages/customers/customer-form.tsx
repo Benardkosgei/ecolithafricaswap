@@ -23,7 +23,7 @@ interface CustomerFormProps {
 
 export function CustomerForm({ isOpen, onClose, customer }: CustomerFormProps) {
   const queryClient = useQueryClient();
-  const [formData, setFormData] = useState({ ...customer } || {});
+  const [formData, setFormData] = useState(customer || {});
 
   const createMutation = useCreateCustomer();
   const updateMutation = useUpdateCustomer();
@@ -33,7 +33,7 @@ export function CustomerForm({ isOpen, onClose, customer }: CustomerFormProps) {
 
   useEffect(() => {
     if (isOpen) {
-      setFormData(customer ? { ...customer, full_name: 'John Doe Updated' } : {});
+      setFormData(customer || {});
     }
   }, [customer, isOpen]);
 

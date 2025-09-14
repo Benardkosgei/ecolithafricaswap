@@ -65,7 +65,7 @@ function App() {
 
   useEffect(() => {
     checkAuth()
-  }, [])
+  }, [checkAuth])
 
   return (
     <QueryClientProvider client={queryClient}>
